@@ -1,8 +1,10 @@
 import os
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
+from npo.database import get_session
 from npo.routers.files.schemas import File
 from npo.routers.files.services import (
     compute_hash,
@@ -24,7 +26,7 @@ files_router = APIRouter(
     "/upload",
     summary="Manipulate files",
 )
-async def compute_upload_files(files: list[UploadFile]):
+async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depends(get_session)):
     infos = {}
     # Process each received files
     for upload_file in files:
@@ -39,8 +41,8 @@ async def compute_upload_files(files: list[UploadFile]):
         await compute_hash(file)
         await compute_hash_pathes(file)
         await move_file(file)
-        file.metadata = await extract_metadata(file)
-        await store_file_infos(file)
+        await extract_metadata(file)
+        await store_file_infos(file, db)
         infos[file.name] = file.__dict__
 
     return infos

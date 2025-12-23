@@ -13,4 +13,4 @@ class File(BaseModel):
     hash_dir: str = ""
     hash_file: str = ""
 
-    metadata: dict | None = None
+    meta_data: dict | None = None

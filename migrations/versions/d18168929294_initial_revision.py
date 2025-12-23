@@ -45,6 +45,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("path"),
+        sa.UniqueConstraint("hash"),
     )
 
 

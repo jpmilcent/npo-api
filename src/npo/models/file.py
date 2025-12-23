@@ -10,7 +10,7 @@ class File(Base):
     mime: Mapped[str | None] = mapped_column(String(50), default=None)
     size: Mapped[int | None] = mapped_column(Integer, default=None)
 
-    hash: Mapped[str] = mapped_column(String(32), default="")
+    hash: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     hash_dir: Mapped[str] = mapped_column(String(16), default="")
     hash_file: Mapped[str] = mapped_column(String(20), default="")
 

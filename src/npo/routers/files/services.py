@@ -3,8 +3,11 @@ import os
 
 import exiftool
 from fastapi import UploadFile
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
+from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 
 
@@ -46,14 +49,26 @@ async def move_file(file: File) -> None:
     file.path = storage_path
 
 
-async def extract_metadata(file: File) -> dict:
-    infos = {}
+async def extract_metadata(file: File) -> None:
     with exiftool.ExifToolHelper() as et:
         metadata = et.get_tags(file.path, tags=["ImageWidth", "ImageHeight"])
-        for d in metadata:
-            infos[file.name] = d
-    return infos
+        for item in metadata:
+            file.meta_data = item
 
 
-async def store_file_infos(file: File) -> None:
-    pass  # To be implemented: store file infos in the database
+async def store_file_infos(file: File, db: AsyncSession) -> None:
+    stmt = select(FileStorage).filter_by(hash=file.hash)
+    result = await db.execute(stmt)
+    file_storage = result.scalar_one_or_none()
+
+    if file_storage:
+        data = file.model_dump(exclude_none=True)
+        data.pop("id", None)
+        for key, value in data.items():
+            setattr(file_storage, key, value)
+    else:
+        file_storage = FileStorage(**file.__dict__)
+        db.add(file_storage)
+
+    await db.commit()
+    await db.refresh(file_storage)
