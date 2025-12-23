@@ -1,5 +1,6 @@
 import hashlib
 import os
+from zipfile import ZipFile
 
 import exiftool
 import pyvips
@@ -45,6 +46,7 @@ async def compute_hash_pathes(file: File) -> None:
 
 
 async def move_file(file: File) -> None:
+    # TODO: Use file mime type to determine file extension
     storage_path = os.path.join(config.settings.storage_dir, file.hash_dir, file.hash_file + ".jpg")
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     os.rename(file.path, storage_path)
@@ -59,9 +61,7 @@ async def extract_metadata(file: File) -> None:
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
-    stmt = select(FileStorage).filter_by(hash=file.hash)
-    result = await db.execute(stmt)
-    file_storage = result.scalar_one_or_none()
+    file_storage = get_file_by_hash(file.hash, db)
 
     if file_storage:
         data = file.model_dump(exclude_none=True)
@@ -76,8 +76,13 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
     await db.refresh(file_storage)
 
 
+async def get_file_by_hash(file_hash: str, db: AsyncSession) -> FileStorage | None:
+    stmt = select(FileStorage).filter_by(hash=file_hash)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def create_dzi(file: File) -> None:
-    # Placeholder for DZI creation logic
     img = pyvips.Image.new_from_file(file.path)
     dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
     img.dzsave(
@@ -90,3 +95,17 @@ async def create_dzi(file: File) -> None:
         container=ForeignDzContainer.ZIP,
         Q=85,
     )
+
+
+async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> bytes | None:
+    dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
+    if not os.path.exists(dzi_path):
+        return None
+
+    with ZipFile(dzi_path, "r") as zip_file:
+        tile_path = f"{file.hash_file}/{zoom}/{x}/{y}.jpg"
+        try:
+            with zip_file.open(tile_path) as tile_file:
+                return tile_file.read()
+        except KeyError:
+            return None

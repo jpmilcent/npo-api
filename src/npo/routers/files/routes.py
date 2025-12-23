@@ -1,6 +1,7 @@
 import os
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
@@ -11,6 +12,8 @@ from npo.routers.files.services import (
     compute_hash_pathes,
     create_dzi,
     extract_metadata,
+    get_file_by_hash,
+    get_tile_from_dzi,
     move_file,
     save_file,
     store_file_infos,
@@ -48,3 +51,20 @@ async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depen
         infos[file.name] = file.__dict__
 
     return infos
+
+
+@files_router.get(
+    "/{file_hash}/{zoom}/{x}/{y}.jpg",
+    summary="Get tile image by hash, zoom level and coordinates",
+    responses={200: {"content": {"image/jpeg": {}}}},
+    response_class=Response,
+)
+async def get_tile_image(
+    file_hash: str, zoom: int, x: int, y: int, db: AsyncSession = Depends(get_session)
+):
+    file_storage = await get_file_by_hash(file_hash, db)
+    if file_storage:
+        image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
+        return Response(content=image_bytes, media_type="image/jpeg")
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
