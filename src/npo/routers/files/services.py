@@ -2,7 +2,9 @@ import hashlib
 import os
 
 import exiftool
+import pyvips
 from fastapi import UploadFile
+from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,3 +74,19 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
 
     await db.commit()
     await db.refresh(file_storage)
+
+
+async def create_dzi(file: File) -> None:
+    # Placeholder for DZI creation logic
+    img = pyvips.Image.new_from_file(file.path)
+    dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
+    img.dzsave(
+        dzi_path,
+        layout=ForeignDzLayout.GOOGLE,
+        tile_size=256,
+        overlap=1,
+        suffix=".jpg",
+        depth=ForeignDzDepth.ONETILE,
+        container=ForeignDzContainer.ZIP,
+        Q=85,
+    )

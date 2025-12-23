@@ -9,6 +9,7 @@ from npo.routers.files.schemas import File
 from npo.routers.files.services import (
     compute_hash,
     compute_hash_pathes,
+    create_dzi,
     extract_metadata,
     move_file,
     save_file,
@@ -43,6 +44,7 @@ async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depen
         await move_file(file)
         await extract_metadata(file)
         await store_file_infos(file, db)
+        await create_dzi(file)
         infos[file.name] = file.__dict__
 
     return infos
