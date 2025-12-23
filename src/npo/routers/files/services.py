@@ -43,7 +43,7 @@ async def compute_hash_pathes(file: File) -> None:
 
 
 async def move_file(file: File) -> None:
-    storage_path = os.path.join(config.settings.storage_dir, file.hash_dir, file.hash_file)
+    storage_path = os.path.join(config.settings.storage_dir, file.hash_dir, file.hash_file + ".jpg")
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     os.rename(file.path, storage_path)
     file.path = storage_path
