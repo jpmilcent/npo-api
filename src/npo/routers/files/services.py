@@ -51,7 +51,7 @@ async def move_file(file: File) -> None:
 
 async def extract_metadata(file: File) -> None:
     with exiftool.ExifToolHelper() as et:
-        metadata = et.get_tags(file.path, tags=["ImageWidth", "ImageHeight"])
+        metadata = et.get_metadata(file.path)
         for item in metadata:
             file.meta_data = item
 
