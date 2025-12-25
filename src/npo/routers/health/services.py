@@ -1,9 +1,9 @@
 import os
 
 from fastapi import Depends
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import text
 
 from npo import config
 from npo.database import get_session
