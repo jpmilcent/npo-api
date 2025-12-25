@@ -6,10 +6,10 @@ import exiftool
 import pyvips
 from fastapi import UploadFile
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
+from npo.core.file import get_file_by_hash
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 
@@ -61,7 +61,7 @@ async def extract_metadata(file: File) -> None:
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
-    file_storage = get_file_by_hash(file.hash, db)
+    file_storage = await get_file_by_hash(file.hash, db)
 
     if file_storage:
         data = file.model_dump(exclude_none=True)
@@ -74,12 +74,6 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
 
     await db.commit()
     await db.refresh(file_storage)
-
-
-async def get_file_by_hash(file_hash: str, db: AsyncSession) -> FileStorage | None:
-    stmt = select(FileStorage).filter_by(hash=file_hash)
-    result = await db.execute(stmt)
-    return result.scalar_one_or_none()
 
 
 async def create_dzi(file: File) -> None:
@@ -109,3 +103,13 @@ async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> byt
                 return tile_file.read()
         except KeyError:
             return None
+
+
+async def get_image(file: FileStorage) -> bytes | None:
+    img_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".jpg"
+
+    try:
+        with open(img_path, "rb") as img_file:
+            return img_file.read()
+    except FileNotFoundError:
+        return None
