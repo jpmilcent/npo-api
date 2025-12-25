@@ -1,5 +1,10 @@
-from fastapi import APIRouter
+from typing import Annotated
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from npo.core.file import get_file_by_hash
+from npo.database import get_session
 
 metadata_router = APIRouter(
     prefix="/metadata",
@@ -9,8 +14,9 @@ metadata_router = APIRouter(
 
 
 @metadata_router.get(
-    "{item_hash}",
-    summary="App frontend settings",
+    "/{file_hash}",
+    summary="Metadata by file hash",
 )
-async def get_metadata(item_hash: str):
-    return item_hash
+async def get_metadata(file_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
+    file_storage = await get_file_by_hash(file_hash, db)
+    return file_storage.meta_data if file_storage else {}

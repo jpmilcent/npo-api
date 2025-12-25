@@ -15,6 +15,7 @@ from npo.dependencies import (
 )
 from npo.routers.files.routes import files_router
 from npo.routers.health.routes import health_router
+from npo.routers.metadata.routes import metadata_router
 from npo.routers.settings.routes import settings_router
 
 
@@ -36,6 +37,7 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(settings_router)
 app.include_router(files_router)
+app.include_router(metadata_router)
 
 
 @app.middleware("http")
