@@ -3,8 +3,10 @@
 
 ## Development
 
-We use [uv](https://docs.astral.sh/uv/) to manage de the project and [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API.
-
+We use :
+- [uv](https://docs.astral.sh/uv/) to manage the project
+- [Ruff](https://docs.astral.sh/ruff/) to lint and format code
+- [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
 
 To start the development server : `uv run fastapi dev main.py`
 
