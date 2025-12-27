@@ -16,6 +16,8 @@ class BackendSettings(CommonSettings):
     admin_email: str
     uploads_dir: str
     storage_dir: str
+    hash_dir_parts_count: int = 6
+    hash_dir_step: int = 2
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
