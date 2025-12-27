@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core.file import get_file_by_hash
@@ -19,4 +19,7 @@ metadata_router = APIRouter(
 )
 async def get_metadata(file_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
     file_storage = await get_file_by_hash(file_hash, db)
-    return file_storage.meta_data if file_storage else {}
+    if file_storage:
+        return file_storage.meta_data
+    else:
+        raise HTTPException(status_code=404, detail="Metadata not found")
