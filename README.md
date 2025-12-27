@@ -43,6 +43,13 @@ Install the project with uv:
 uv sync --locked --all-extras --dev
 ```
 
+Create your config file:
+
+```bash
+cp .env.sample .env
+# Edit the .env file and adapt the settings to your system
+```
+
 To start the development server:
 ```bash
 uv run fastapi dev src/npo/main.py
