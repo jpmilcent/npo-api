@@ -1,13 +1,8 @@
 import exiftool
 from fastapi import status
-from fastapi.testclient import TestClient
-
-from npo.main import app
-
-client = TestClient(app)
 
 
-async def test_metadata(shared_datadir, upload_image):
+async def test_metadata(client, shared_datadir, upload_image):
     """Test the metadata endpoint."""
 
     image_name = "image_01.jpg"
@@ -15,7 +10,7 @@ async def test_metadata(shared_datadir, upload_image):
 
     uploaded_file_hash = await upload_image(image_name)
 
-    response = client.get(f"/metadata/{uploaded_file_hash}")
+    response = await client.get(f"/metadata/{uploaded_file_hash}")
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/json"
     meta_data = response.json()
