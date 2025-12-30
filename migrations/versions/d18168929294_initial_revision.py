@@ -27,9 +27,10 @@ def upgrade() -> None:
         sa.Column("path", sa.String(length=250), nullable=False),
         sa.Column("mime", sa.String(length=50), nullable=True),
         sa.Column("size", sa.Integer(), nullable=True),
+        sa.Column("orientation", sa.Integer(), nullable=True),
         sa.Column("hash", sa.String(length=32), nullable=False),
-        sa.Column("hash_dir", sa.String(length=16), nullable=False),
-        sa.Column("hash_file", sa.String(length=20), nullable=False),
+        sa.Column("hash_dir", sa.String(length=75), nullable=False),
+        sa.Column("hash_file", sa.String(length=32), nullable=False),
         sa.Column("meta_data", sa.JSON(), nullable=True),
         sa.Column(
             "created_at",

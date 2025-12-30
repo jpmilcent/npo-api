@@ -58,6 +58,7 @@ async def extract_metadata(file: File) -> None:
         metadata = et.get_metadata(file.path)
         for item in metadata:
             file.meta_data = item
+            file.orientation = item.get("EXIF:Orientation")
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
@@ -78,6 +79,7 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
 
 async def create_dzi(file: File) -> None:
     img = pyvips.Image.new_from_file(file.path)
+    img = img.autorot()
     dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
     img.dzsave(
         dzi_path,
