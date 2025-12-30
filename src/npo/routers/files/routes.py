@@ -1,6 +1,6 @@
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +30,7 @@ files_router = APIRouter(
 @files_router.post(
     "/upload",
     summary="Upload files",
+    status_code=status.HTTP_201_CREATED,
 )
 async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depends(get_session)):
     infos = {}

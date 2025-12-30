@@ -8,6 +8,7 @@ class File(BaseModel):
     path: str
     mime: str | None = None
     size: int | None = None
+    orientation: int | None = None
 
     hash: str = ""
     hash_dir: str = ""
