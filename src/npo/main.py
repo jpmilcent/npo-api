@@ -1,5 +1,6 @@
 """Main application entry point for NPO API."""
 
+import logging
 import time
 from contextlib import asynccontextmanager
 
@@ -18,11 +19,15 @@ from npo.routers.health.routes import health_router
 from npo.routers.metadata.routes import metadata_router
 from npo.routers.settings.routes import settings_router
 
+logger = logging.getLogger(config.settings.logger_name)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    logger.info("✅ Application started and database tables created!")
     yield
+    logger.info("🛑 Application shutting down!")
 
 
 app = FastAPI(
