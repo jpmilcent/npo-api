@@ -17,13 +17,15 @@ TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:
 USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1", "true", "yes")
 
 
-def pytest_configure(config):
+def pytest_report_header(config):
+    messages = []
     if os.path.exists(".env.test"):
-        print("\n[INFO] Fichier .env.test détecté.")
+        messages.append("📝 .env.test file detected.")
     else:
-        print("\n[INFO] Aucun fichier .env.test trouvé (utilisation des valeurs par défaut).")
-    print(f"TEST_DATABASE_URL: {TEST_DATABASE_URL}")
-    print(f"USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
+        messages.append("📄 No .env.test file found (using default values).")
+    messages.append(f"📚 TEST_DATABASE_URL: {TEST_DATABASE_URL}")
+    messages.append(f"🔁 USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
+    return messages
 
 
 @pytest_asyncio.fixture
