@@ -20,11 +20,11 @@ USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1
 def pytest_report_header(config):
     messages = []
     if os.path.exists(".env.test"):
-        messages.append("📝 .env.test file detected.")
+        messages.append("⚙️ .env.test file detected.")
     else:
-        messages.append("📄 No .env.test file found (using default values).")
-    messages.append(f"📚 TEST_DATABASE_URL: {TEST_DATABASE_URL}")
-    messages.append(f"🔁 USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
+        messages.append("⚙️ No .env.test file found (using default values).")
+    messages.append(f"🛢️ TEST_DATABASE_URL: {TEST_DATABASE_URL}")
+    messages.append(f"⚗️ USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
     return messages
 
 
