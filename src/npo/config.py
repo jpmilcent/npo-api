@@ -1,5 +1,6 @@
 """Application configuration settings."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,13 @@ class BackendSettings(CommonSettings):
     hash_dir_step: int = 2
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
+
+    @field_validator("uploads_dir", "storage_dir")
+    @classmethod
+    def ensure_trailing_slash(cls, v: str) -> str:
+        if v and not v.endswith("/"):
+            return f"{v}/"
+        return v
 
 
 class FrontendSettings(CommonSettings):
