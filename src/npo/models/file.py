@@ -10,7 +10,10 @@ class File(Base):
     mime: Mapped[str | None] = mapped_column(String(50), default=None)
     size: Mapped[int | None] = mapped_column(Integer, default=None)
     orientation: Mapped[int | None] = mapped_column(Integer, default=None)
+    image_unique_id: Mapped[str | None] = mapped_column(String(64), default=None)
 
+    perceptual_hash: Mapped[str | None] = mapped_column(String(16), default=None)
+    pixel_hash: Mapped[str | None] = mapped_column(String(32), default=None)
     hash: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     hash_dir: Mapped[str] = mapped_column(String(75), default="")
     hash_file: Mapped[str] = mapped_column(String(32), default="")

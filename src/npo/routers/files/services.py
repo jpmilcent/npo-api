@@ -34,6 +34,48 @@ async def compute_hash(file: File) -> None:
         file.hash = hashlib.md5(data).hexdigest()
 
 
+async def compute_pixel_hash(file: File) -> None:
+    """
+    Calcule un hash BLAKE2b basé sur les pixels bruts de l'image via pyvips.
+    Ignore les métadonnées (EXIF, etc).
+    """
+    # access="sequential" optimise la lecture pour un seul passage
+    img = pyvips.Image.new_from_file(file.path, access="sequential")
+
+    # write_to_memory() force le décodage et retourne les bytes des pixels (RGB/RGBA...)
+    data = img.write_to_memory()
+    # digest_size=16 produit 128 bits (32 hex chars), format identique à MD5 mais plus rapide/sûr
+    file.pixel_hash = hashlib.blake2b(data, digest_size=16).hexdigest()
+
+
+async def compute_perceptual_hash(file: File) -> None:
+    """
+    Calcule un hash perceptuel (dHash) en utilisant pyvips.
+    Résistant aux redimensionnements et à la compression.
+    """
+    # Chargement et redimensionnement en 9x8 pixels (force la taille sans conserver le ratio)
+    # Utilisation de access="sequential" pour forcer le mode flux (streaming) et économiser la mémoire
+    img = pyvips.Image.new_from_file(file.path, access="sequential")
+    img = img.thumbnail_image(9, height=8, size="force")
+
+    # Conversion en noir et blanc
+    img = img.colourspace("b-w")
+
+    # Récupération des données brutes des pixels (9x8 = 72 octets)
+    pixels = img.write_to_memory()
+
+    hash_val = 0
+    # On parcourt les 8 lignes
+    for row in range(8):
+        # On parcourt les 8 colonnes de gauche à droite
+        for col in range(8):
+            # Si le pixel de gauche est plus clair que celui de droite, on met le bit à 1
+            if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
+                hash_val |= 1 << (63 - (row * 8 + col))
+
+    file.perceptual_hash = f"{hash_val:016x}"
+
+
 async def compute_hash_pathes(file: File) -> None:
     step: int = config.settings.hash_dir_step
     chunks = [file.hash[i : i + step] for i in range(0, len(file.hash), step)]
@@ -59,6 +101,7 @@ async def extract_metadata(file: File) -> None:
         for item in metadata:
             file.meta_data = item
             file.orientation = item.get("EXIF:Orientation")
+            file.image_unique_id = item.get("EXIF:ImageUniqueID")
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
