@@ -59,3 +59,34 @@ The API documentation can be found in two variants :
 - [Swagger UI](http://127.0.0.1:8000/docs)
 - [Redoc](http://127.0.0.1:8000/redoc)
 
+### Postgresql database
+
+By default, we use SQLite, but you can use PostgreSQL. You will need to add a new user and create a new database. Here are the steps to follow:
+
+Connect to Psql terminal with a superadmin user:
+
+```bash
+sudo -u postgres psql
+```
+
+In Psql terminal, create a new user (`<user-name>`) with password (`<user-password>`) and a new database (`<new-database-name>`):
+
+```sql
+CREATE USER <user-name> WITH ENCRYPTED PASSWORD '<user-password>';
+CREATE DATABASE <new-database-name> WITH TEMPLATE template1 OWNER <user-name>;
+GRANT ALL PRIVILEGES ON DATABASE <new-database-name> TO <user-name> ;
+```
+
+The database content is installed by default when FastAPI app is launch if it doesn't exist. The same applies to the migrations. But you need to change the environment variable or `.env` file parameter `NPO_DATABASE_URI` with this:
+
+```properties
+NPO_DATABASE_URI="postgresql+asyncpg://<user-name>:<user-password>@localhost:5432/<new-database-name>"
+```
+
+### Tests
+
+By default all tests use an SQLite database in memory. But you can use a PostgreSQL database.
+For that, you need to create a file `.env.test` base on `.env.test.sample` and edit the
+parameter `TEST_DATABASE_URL`.
+
+You can also use the SQLAlchemy models files to create the database content or the Alembic migrations with the parameter `USE_ALEMBIC_MIGRATIONS` avec la valeur `True`.
