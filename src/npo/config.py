@@ -14,6 +14,7 @@ class BackendSettings(CommonSettings):
     """Backend application settings."""
 
     database_uri: str
+    logger_name: str = "uvicorn.info"
     admin_email: str
     uploads_dir: str
     storage_dir: str
