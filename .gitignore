@@ -11,3 +11,4 @@ wheels/
 
 # Config files
 .env
+.env.test

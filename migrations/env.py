@@ -9,14 +9,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from npo import database  # noqa: E402
 from npo.config import settings
-from npo.models.file import File  # noqa: E402
 
-# import sys
-# from pathlib import Path
-# sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Alembic Config object, which provides access to the values within the pyproject.toml file in use.
 config = Config(toml_file="pyproject.toml")
 
 config.set_main_option("sqlalchemy.url", settings.database_uri)
@@ -26,11 +20,8 @@ config.set_main_option("sqlalchemy.url", settings.database_uri)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
+# Add model's MetaData object for 'autogenerate' support
 target_metadata = database.Base.metadata
-# target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -90,7 +81,14 @@ async def run_async_migrations() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
 
-    asyncio.run(run_async_migrations())
+    connectable = context.config.attributes.get("connection", None)
+
+    if connectable is None:
+        # Cas asynchrone (pas de connexion passée)
+        asyncio.run(run_async_migrations())
+    else:
+        # Cas synchrone (connexion passée par run_sync dans les tests)
+        do_run_migrations(connectable)
 
 
 if context.is_offline_mode():
