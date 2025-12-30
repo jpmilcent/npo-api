@@ -23,7 +23,7 @@ async def test_metadata(shared_datadir, upload_image):
     # Cross-validation: use exiftool locally on the source file
     # to verify that the API returns the same values.
     with exiftool.ExifToolHelper() as et:
-        local_metadata = await et.get_metadata(str(image_path))[0]
+        local_metadata = et.get_metadata(str(image_path))[0]
 
     # Comparison of critical fields (MIME, Dimensions) only to avoid some fields that may vary.
     # This ensures that the API correctly extracts real data from the file.
