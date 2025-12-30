@@ -1,0 +1,142 @@
+import hashlib
+import os
+
+import pytest_asyncio
+from alembic import command
+from alembic.config import Config
+from fastapi import status
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from npo import config
+from npo.database import Base, get_session
+from npo.main import app
+
+# URL for an in-memory SQLite database by default, specific to tests
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1", "true", "yes")
+
+
+def pytest_configure(config):
+    if os.path.exists(".env.test"):
+        print("\n[INFO] Fichier .env.test détecté.")
+    else:
+        print("\n[INFO] Aucun fichier .env.test trouvé (utilisation des valeurs par défaut).")
+    print(f"TEST_DATABASE_URL: {TEST_DATABASE_URL}")
+    print(f"USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
+
+
+@pytest_asyncio.fixture
+async def override_db_session():
+    """
+    Fixture that creates a fresh database for each test.
+    """
+
+    # SQLite-specific configuration
+    connect_args = {"check_same_thread": False} if "sqlite" in TEST_DATABASE_URL else {}
+
+    # Create the async engine
+    engine = create_async_engine(TEST_DATABASE_URL, connect_args=connect_args)
+
+    # Create tables
+    async with engine.begin() as conn:
+        # Either run Alembic migrations or create tables from models depending on env.
+        if USE_ALEMBIC_MIGRATIONS:
+
+            def upgrade_migration_to_head(connection):
+                alembic_cfg = Config(toml_file="pyproject.toml")
+                alembic_cfg.attributes["connection"] = connection
+                command.upgrade(alembic_cfg, "head")
+
+            await conn.run_sync(upgrade_migration_to_head)
+        else:
+            # Create tables directly from models (fast, suitable for most unit tests)
+            await conn.run_sync(Base.metadata.create_all)
+
+    # Session factory for tests
+    TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    async with TestingSessionLocal() as session:
+        yield session
+
+    # Clean up tables (necessary if using a real DB like Postgres)
+    async with engine.begin() as conn:
+        # Either run Alembic migrations or create tables from models depending on env.
+        if USE_ALEMBIC_MIGRATIONS:
+
+            def downgrade_migrations_to_base(connection):
+                alembic_cfg = Config(toml_file="pyproject.toml")
+                alembic_cfg.attributes["connection"] = connection
+                command.downgrade(alembic_cfg, "base")
+
+            await conn.run_sync(downgrade_migrations_to_base)
+        else:
+            # Drop tables directly from models (fast, suitable for most unit tests)
+            await conn.run_sync(Base.metadata.drop_all)
+
+    # Dispose the engine at the end of the test
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+def override_settings(tmp_path):
+    """
+    Override configuration to use temporary directories for uploads and storage.
+    """
+    # Backup original configuration
+    original_uploads_dir = config.settings.uploads_dir
+    original_storage_dir = config.settings.storage_dir
+
+    # Redirect to an isolated temporary directory (tmp_path)
+    # This avoids writing into tests/data/ and polluting the source tree
+    config.settings.uploads_dir = f"{tmp_path}/uploads/"
+    # os.makedirs(config.settings.uploads_dir, exist_ok=True)
+    config.settings.storage_dir = f"{tmp_path}/storage/"
+    # os.makedirs(config.settings.storage_dir, exist_ok=True)
+
+    yield tmp_path
+
+    # Restore configuration
+    config.settings.uploads_dir = original_uploads_dir
+    config.settings.storage_dir = original_storage_dir
+
+
+@pytest_asyncio.fixture
+async def client(override_db_session, override_settings):
+    """
+    Fixture providing a real async HTTP client.
+    Overrides the application's database dependency.
+    """
+    # Override the get_session dependency to use the test session
+    app.dependency_overrides[get_session] = lambda: override_db_session
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+    # Clear dependency overrides after the test
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def upload_image(client, shared_datadir):
+    """
+    Fixture (Factory function) that provides a function to upload an image and return its hash.
+    """
+
+    async def _uploader(image_name):
+        image_path = shared_datadir / image_name
+        image_mime = "image/jpeg"
+
+        # Upload du fichier
+        with open(image_path, "rb") as f:
+            files = {"files": (image_name, f, image_mime)}
+            response = await client.post("/files/upload", files=files)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # Calcul et retour du hash
+        with open(image_path, "rb") as file_to_hash:
+            data = file_to_hash.read()
+            return hashlib.md5(data).hexdigest()
+
+    return _uploader
