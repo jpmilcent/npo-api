@@ -46,12 +46,12 @@ async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depen
         )
 
         await save_file(upload_file, file)
+        await extract_metadata(file)
         await compute_hash(file)
         await compute_pixel_hash(file)
         await compute_perceptual_hash(file)
         await compute_hash_pathes(file)
         await move_file(file)
-        await extract_metadata(file)
         await store_file_infos(file, db)
         await create_dzi(file)
         infos[file.name] = file.__dict__

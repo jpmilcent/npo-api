@@ -78,7 +78,7 @@ async def compute_perceptual_hash(file: File) -> None:
 
 async def compute_hash_pathes(file: File) -> None:
     step: int = config.settings.hash_dir_step
-    chunks = [file.hash[i : i + step] for i in range(0, len(file.hash), step)]
+    chunks = [file.pixel_hash[i : i + step] for i in range(0, len(file.pixel_hash), step)]
 
     for part, chunk in enumerate(chunks):
         if part < config.settings.hash_dir_parts_count:
