@@ -1,6 +1,7 @@
 import hashlib
 
 import exiftool
+import pyvips
 from fastapi import status
 
 from npo import config
@@ -53,14 +54,16 @@ async def test_upload_file(client, shared_datadir):
     # Verify MIME type
     assert response_data[image_name]["mime"] == image_mime
 
-    # Verify hash (MD5)
-    with open(image_path, "rb") as file_to_hash:
-        data = file_to_hash.read()
-        expected_hash = hashlib.md5(data).hexdigest()
-    assert response_data[image_name]["hash"] == expected_hash
+    # Verify pixel hash
+    img = pyvips.Image.new_from_file(image_path, access="sequential")
+    # write_to_memory() force le décodage et retourne les bytes des pixels (RGB/RGBA...)
+    data = img.write_to_memory()
+    # digest_size=16 produit 128 bits (32 hex chars), format identique à MD5 mais plus rapide/sûr
+    expected_hash = hashlib.blake2b(data, digest_size=16).hexdigest()
+    assert response_data[image_name]["pixel_hash"] == expected_hash
 
     # Verify hash_dir and hash_file composition
-    hash_value = response_data[image_name]["hash"]
+    hash_value = response_data[image_name]["pixel_hash"]
     step = config.settings.hash_dir_step
     parts_count = config.settings.hash_dir_parts_count
     chunks = [hash_value[i : i + step] for i in range(0, step * parts_count, step)]
