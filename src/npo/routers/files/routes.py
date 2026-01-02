@@ -1,4 +1,5 @@
 import os
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import Response
@@ -9,6 +10,8 @@ from npo.core.file import get_file_by_hash
 from npo.database import get_session
 from npo.routers.files.schemas import File
 from npo.routers.files.services import (
+    check_duplicates_by_image_unique_id,
+    check_duplicates_by_perceptual_hash,
     compute_hash,
     compute_hash_pathes,
     compute_perceptual_hash,
@@ -34,7 +37,9 @@ files_router = APIRouter(
     summary="Upload files",
     status_code=status.HTTP_201_CREATED,
 )
-async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depends(get_session)):
+async def compute_upload_files(
+    files: list[UploadFile], db: Annotated[AsyncSession, Depends(get_session)]
+):
     infos = {}
     # Process each received files
     for upload_file in files:
@@ -46,10 +51,14 @@ async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depen
         )
 
         await save_file(upload_file, file)
+
+        await compute_perceptual_hash(file)
+        await check_duplicates_by_perceptual_hash(file, db)
         await extract_metadata(file)
+        await check_duplicates_by_image_unique_id(file, db)
+
         await compute_hash(file)
         await compute_pixel_hash(file)
-        await compute_perceptual_hash(file)
         await compute_hash_pathes(file)
         await move_file(file)
         await store_file_infos(file, db)
@@ -66,14 +75,20 @@ async def compute_upload_files(files: list[UploadFile], db: AsyncSession = Depen
     response_class=Response,
 )
 async def get_image_tile(
-    file_hash: str, zoom: int, x: int, y: int, db: AsyncSession = Depends(get_session)
+    file_hash: str, zoom: int, x: int, y: int, db: Annotated[AsyncSession, Depends(get_session)]
 ):
     file_storage = await get_file_by_hash(file_hash, db)
     if file_storage:
         image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
         return Response(content=image_bytes, media_type="image/jpeg")
     else:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "FILE_NOT_FOUND",
+                "message": f"File {file_hash} not found",
+            },
+        )
 
 
 @files_router.get(
@@ -82,10 +97,16 @@ async def get_image_tile(
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
 )
-async def get_image_full(file_hash: str, db: AsyncSession = Depends(get_session)):
+async def get_image_full(file_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
     file_storage = await get_file_by_hash(file_hash, db)
     if file_storage:
         image_bytes: bytes = await get_image(file_storage)
         return Response(content=image_bytes, media_type=file_storage.mime)
     else:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "FILE_NOT_FOUND",
+                "message": f"File {file_hash} not found",
+            },
+        )

@@ -5,13 +5,12 @@ from zipfile import ZipFile
 
 import exiftool
 import pyvips
-from fastapi import UploadFile
 from fastapi import HTTPException, UploadFile, status
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
-from npo.core.file import get_file_by_hash
+from npo.core.file import get_file_by_hash, get_file_by_image_unique_id, get_file_by_perceptual_hash
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 
@@ -38,44 +37,56 @@ async def compute_hash(file: File) -> None:
 
 async def compute_pixel_hash(file: File) -> None:
     """
-    Calcule un hash BLAKE2b basé sur les pixels bruts de l'image via pyvips.
-    Ignore les métadonnées (EXIF, etc).
+    Computes a BLAKE2b hash based on raw image pixels via pyvips.
+    Ignores metadata (EXIF, etc).
     """
-    # access="sequential" optimise la lecture pour un seul passage
     img = pyvips.Image.new_from_file(file.path, access="sequential")
 
-    # write_to_memory() force le décodage et retourne les bytes des pixels (RGB/RGBA...)
+    # write_to_memory() forces decoding and returns pixel bytes (RGB/RGBA...)
     data = img.write_to_memory()
-    # digest_size=16 produit 128 bits (32 hex chars), format identique à MD5 mais plus rapide/sûr
+    # digest_size=16 produces 128 bits (32 hex chars), same format as MD5 but faster/safer
     file.pixel_hash = hashlib.blake2b(data, digest_size=16).hexdigest()
 
 
 async def compute_perceptual_hash(file: File) -> None:
     """
-    Calcule un hash perceptuel (dHash) en utilisant pyvips.
-    Résistant aux redimensionnements et à la compression.
+    Computes a perceptual hash (dHash) using pyvips.
+    Resistant to resizing and compression.
     """
-    # Chargement et redimensionnement en 9x8 pixels (force la taille sans conserver le ratio)
-    # Utilisation de access="sequential" pour forcer le mode flux (streaming) et économiser la mémoire
+    # Load and resize to 9x8 pixels (force size without preserving aspect ratio)
+    # Use access="sequential" to force streaming mode and save memory
     img = pyvips.Image.new_from_file(file.path, access="sequential")
     img = img.thumbnail_image(9, height=8, size="force")
 
-    # Conversion en noir et blanc
+    # Convert to black and white
     img = img.colourspace("b-w")
 
-    # Récupération des données brutes des pixels (9x8 = 72 octets)
+    # Retrieve raw pixel data (9x8 = 72 bytes)
     pixels = img.write_to_memory()
 
     hash_val = 0
-    # On parcourt les 8 lignes
+    # Iterate over the 8 rows
     for row in range(8):
-        # On parcourt les 8 colonnes de gauche à droite
+        # Iterate over the 8 columns from left to right
         for col in range(8):
-            # Si le pixel de gauche est plus clair que celui de droite, on met le bit à 1
+            # If the left pixel is brighter than the right one, set the bit to 1
             if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
                 hash_val |= 1 << (63 - (row * 8 + col))
 
     file.perceptual_hash = f"{hash_val:016x}"
+
+
+async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> None:
+    if await get_file_by_perceptual_hash(file.perceptual_hash, db):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "DUPLICATE_PERCEPTUAL_HASH",
+                "message": (
+                    f"File {file.name} with perceptual hash {file.perceptual_hash} already exists."
+                ),
+            },
+        )
 
 
 async def compute_hash_pathes(file: File) -> None:
@@ -161,6 +172,19 @@ def parse_exif_date(date_str: str | None) -> datetime | None:
         return datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
     except ValueError:
         return None
+
+
+async def check_duplicates_by_image_unique_id(file: File, db: AsyncSession) -> None:
+    if await get_file_by_image_unique_id(file.image_unique_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "DUPLICATE_IMAGE_UNIQUE_ID",
+                "message": (
+                    f"File {file.name} with image unique ID {file.image_unique_id} already exists."
+                ),
+            },
+        )
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
