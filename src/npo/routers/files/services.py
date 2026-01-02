@@ -1,10 +1,12 @@
 import hashlib
 import os
+from datetime import datetime
 from zipfile import ZipFile
 
 import exiftool
 import pyvips
 from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -97,11 +99,68 @@ async def move_file(file: File) -> None:
 
 async def extract_metadata(file: File) -> None:
     with exiftool.ExifToolHelper() as et:
-        metadata = et.get_metadata(file.path)
+        metadata = et.get_metadata(file.path, params=["-n"])
         for item in metadata:
             file.meta_data = item
             file.orientation = item.get("EXIF:Orientation")
             file.image_unique_id = item.get("EXIF:ImageUniqueID")
+
+            # GPS Data
+            check_gps_map_datum(file, item)
+            file.latitude = extract_metadata_latitude(item)
+            file.longitude = extract_metadata_longitude(item)
+            file.altitude = extract_metadata_altitude(item)
+
+            # DateTime Data
+            file.datetime_shooting = parse_exif_date(item.get("EXIF:DateTimeOriginal"))
+            file.datetime_digitized = parse_exif_date(item.get("EXIF:DateTimeDigitized"))
+
+
+def check_gps_map_datum(file: File, metadata: dict) -> None:
+    gps_datum = metadata.get("EXIF:GPSMapDatum")
+    if gps_datum and gps_datum != "WGS-84":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "UNSUPPORTED_GPS_DATUM",
+                "message": (
+                    f"File {file.name} has unsupported GPS Map Datum: {gps_datum}. "
+                    "Only WGS-84 is supported."
+                ),
+            },
+        )
+
+
+def extract_metadata_altitude(metadata: dict) -> float | None:
+    altitude = metadata.get("EXIF:GPSAltitude")
+    if altitude is not None and metadata.get("EXIF:GPSAltitudeRef") == 1:
+        return -1.0 * altitude
+    return altitude
+
+
+def extract_metadata_latitude(metadata: dict) -> float | None:
+    latitude = metadata.get("EXIF:GPSLatitude")
+    # Si la référence est "S" (South), la latitude est négative
+    if latitude is not None and metadata.get("EXIF:GPSLatitudeRef") == "S":
+        return -1.0 * latitude
+    return latitude
+
+
+def extract_metadata_longitude(metadata: dict) -> float | None:
+    longitude = metadata.get("EXIF:GPSLongitude")
+    # Si la référence est "W" (West), la longitude est négative
+    if longitude is not None and metadata.get("EXIF:GPSLongitudeRef") == "W":
+        return -1.0 * longitude
+    return longitude
+
+
+def parse_exif_date(date_str: str | None) -> datetime | None:
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
+    except ValueError:
+        return None
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
