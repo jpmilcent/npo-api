@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -10,6 +12,12 @@ class File(BaseModel):
     size: int | None = None
     orientation: int | None = None
     image_unique_id: str | None = None
+
+    latitude: float | None = None
+    longitude: float | None = None
+    altitude: float | None = None
+    datetime_shooting: datetime | None = None
+    datetime_digitized: datetime | None = None
 
     perceptual_hash: str | None = None
     pixel_hash: str | None = None
