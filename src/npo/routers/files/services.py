@@ -10,7 +10,11 @@ from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
-from npo.core.file import get_file_by_hash, get_file_by_image_unique_id, get_file_by_perceptual_hash
+from npo.core.file import (
+    get_file_by_image_unique_id,
+    get_file_by_perceptual_hash,
+    get_file_by_pixel_hash,
+)
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 
@@ -32,7 +36,7 @@ async def save_file(upload_file: UploadFile, file: File):
 async def compute_hash(file: File) -> None:
     with open(file.path, "rb") as file_to_hash:
         data = file_to_hash.read()
-        file.hash = hashlib.md5(data).hexdigest()
+        file.file_hash = hashlib.md5(data).hexdigest()
 
 
 async def compute_pixel_hash(file: File) -> None:
@@ -95,14 +99,16 @@ async def compute_hash_pathes(file: File) -> None:
 
     for part, chunk in enumerate(chunks):
         if part < config.settings.hash_dir_parts_count:
-            file.hash_dir += chunk + "/"
+            file.path_hash_dir += chunk + "/"
         else:
-            file.hash_file += chunk
+            file.path_hash_file += chunk
 
 
 async def move_file(file: File) -> None:
     # TODO: Use file mime type to determine file extension
-    storage_path = os.path.join(config.settings.storage_dir, file.hash_dir, file.hash_file + ".jpg")
+    storage_path = os.path.join(
+        config.settings.storage_dir, file.path_hash_dir, file.path_hash_file + ".jpg"
+    )
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     os.rename(file.path, storage_path)
     file.path = storage_path
@@ -188,7 +194,7 @@ async def check_duplicates_by_image_unique_id(file: File, db: AsyncSession) -> N
 
 
 async def store_file_infos(file: File, db: AsyncSession) -> None:
-    file_storage = await get_file_by_hash(file.hash, db)
+    file_storage = await get_file_by_pixel_hash(file.pixel_hash, db)
 
     if file_storage:
         data = file.model_dump(exclude_none=True)
@@ -206,7 +212,7 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
 async def create_dzi(file: File) -> None:
     img = pyvips.Image.new_from_file(file.path)
     img = img.autorot()
-    dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
+    dzi_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".szi"
     img.dzsave(
         dzi_path,
         layout=ForeignDzLayout.GOOGLE,
@@ -220,12 +226,12 @@ async def create_dzi(file: File) -> None:
 
 
 async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> bytes | None:
-    dzi_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".szi"
+    dzi_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".szi"
     if not os.path.exists(dzi_path):
         return None
 
     with ZipFile(dzi_path, "r") as zip_file:
-        tile_path = f"{file.hash_file}/{zoom}/{x}/{y}.jpg"
+        tile_path = f"{file.path_hash_file}/{zoom}/{x}/{y}.jpg"
         try:
             with zip_file.open(tile_path) as tile_file:
                 return tile_file.read()
@@ -234,7 +240,7 @@ async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> byt
 
 
 async def get_image(file: FileStorage) -> bytes | None:
-    img_path = config.settings.storage_dir + file.hash_dir + file.hash_file + ".jpg"
+    img_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".jpg"
 
     try:
         with open(img_path, "rb") as img_file:
