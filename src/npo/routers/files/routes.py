@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
-from npo.core.file import get_file_by_hash
+from npo.core.file import get_file_by_pixel_hash
 from npo.database import get_session
 from npo.routers.files.schemas import File
 from npo.routers.files.services import (
@@ -69,15 +69,15 @@ async def compute_upload_files(
 
 
 @files_router.get(
-    "/{file_hash}/{zoom}/{x}/{y}.jpg",
-    summary="Get tile image by hash, zoom level and coordinates",
+    "/{pixel_hash}/{zoom}/{x}/{y}.jpg",
+    summary="Get tile image by pixel hash, zoom level and coordinates",
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
 )
 async def get_image_tile(
-    file_hash: str, zoom: int, x: int, y: int, db: Annotated[AsyncSession, Depends(get_session)]
+    pixel_hash: str, zoom: int, x: int, y: int, db: Annotated[AsyncSession, Depends(get_session)]
 ):
-    file_storage = await get_file_by_hash(file_hash, db)
+    file_storage = await get_file_by_pixel_hash(pixel_hash, db)
     if file_storage:
         image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
         return Response(content=image_bytes, media_type="image/jpeg")
@@ -86,19 +86,19 @@ async def get_image_tile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "code": "FILE_NOT_FOUND",
-                "message": f"File {file_hash} not found",
+                "message": f"File {pixel_hash} not found",
             },
         )
 
 
 @files_router.get(
-    "/{file_hash}",
+    "/{pixel_hash}",
     summary="Get file image by hash",
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
 )
-async def get_image_full(file_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
-    file_storage = await get_file_by_hash(file_hash, db)
+async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
+    file_storage = await get_file_by_pixel_hash(pixel_hash, db)
     if file_storage:
         image_bytes: bytes = await get_image(file_storage)
         return Response(content=image_bytes, media_type=file_storage.mime)
@@ -107,6 +107,6 @@ async def get_image_full(file_hash: str, db: Annotated[AsyncSession, Depends(get
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "code": "FILE_NOT_FOUND",
-                "message": f"File {file_hash} not found",
+                "message": f"File {pixel_hash} not found",
             },
         )

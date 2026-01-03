@@ -33,20 +33,20 @@ async def test_upload_file(client, shared_datadir):
     expected_keys = {
         "name",
         "path",
+        "path_hash_dir",
+        "path_hash_file",
         "size",
         "mime",
         "orientation",
         "image_unique_id",
-        "perceptual_hash",
+        "file_hash",
         "pixel_hash",
+        "perceptual_hash",
         "latitude",
         "longitude",
         "altitude",
         "datetime_shooting",
         "datetime_digitized",
-        "hash",
-        "hash_dir",
-        "hash_file",
         "meta_data",
     }
     assert expected_keys == set(response_data[image_name].keys())
@@ -75,15 +75,15 @@ def _verify_pixel_hash(response_data, image_name, image_path):
 
 
 def _verify_hash_structure(response_data, image_name):
-    # Verify hash_dir and hash_file composition
+    # Verify path_hash_dir and path_hash_file composition
     hash_value = response_data[image_name]["pixel_hash"]
     step = config.settings.hash_dir_step
     parts_count = config.settings.hash_dir_parts_count
     chunks = [hash_value[i : i + step] for i in range(0, step * parts_count, step)]
-    assert response_data[image_name]["hash_dir"] == "".join(
+    assert response_data[image_name]["path_hash_dir"] == "".join(
         [chunk + "/" for chunk in chunks[:parts_count]]
     )
-    assert response_data[image_name]["hash_file"] == hash_value[step * parts_count :]
+    assert response_data[image_name]["path_hash_file"] == hash_value[step * parts_count :]
 
 
 def _verify_metadata(response_image_data, image_path):

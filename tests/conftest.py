@@ -1,4 +1,3 @@
-import hashlib
 import os
 
 import pytest_asyncio
@@ -129,16 +128,14 @@ async def upload_image(client, shared_datadir):
         image_path = shared_datadir / image_name
         image_mime = "image/jpeg"
 
-        # Upload du fichier
+        # Upload the file
         with open(image_path, "rb") as f:
             files = {"files": (image_name, f, image_mime)}
             response = await client.post("/files/upload", files=files)
 
         assert response.status_code == status.HTTP_201_CREATED
 
-        # Calcul et retour du hash
-        with open(image_path, "rb") as file_to_hash:
-            data = file_to_hash.read()
-            return hashlib.md5(data).hexdigest()
+        # Return the pixel hash of the uploaded file
+        return response.json()[image_name]["pixel_hash"]
 
     return _uploader
