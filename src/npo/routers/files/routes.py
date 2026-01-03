@@ -1,7 +1,7 @@
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,12 +24,19 @@ from npo.routers.files.services import (
     save_file,
     store_file_infos,
 )
+from npo.routers.utils import APIException, create_route_decorator
+
+FILE_NOT_FOUND = {
+    "description": "File not found",
+    "code": "FILE_NOT_FOUND",
+    "message": "File {pixel_hash} not found.",
+}
 
 files_router = APIRouter(
     prefix="/files",
     tags=["files"],
-    responses={404: {"description": "Not found"}},
 )
+files_route = create_route_decorator(files_router)
 
 
 @files_router.post(
@@ -68,11 +75,12 @@ async def compute_upload_files(
     return infos
 
 
-@files_router.get(
+@files_route(
     "/{pixel_hash}/{zoom}/{x}/{y}.jpg",
     summary="Get tile image by pixel hash, zoom level and coordinates",
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
+    override_404=FILE_NOT_FOUND,
 )
 async def get_image_tile(
     pixel_hash: str, zoom: int, x: int, y: int, db: Annotated[AsyncSession, Depends(get_session)]
@@ -82,20 +90,19 @@ async def get_image_tile(
         image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
         return Response(content=image_bytes, media_type="image/jpeg")
     else:
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "code": "FILE_NOT_FOUND",
-                "message": f"File {pixel_hash} not found",
-            },
+            code=FILE_NOT_FOUND["code"],
+            message=FILE_NOT_FOUND["message"].format(pixel_hash=pixel_hash),
         )
 
 
-@files_router.get(
+@files_route(
     "/{pixel_hash}",
     summary="Get file image by hash",
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
+    override_404=FILE_NOT_FOUND,
 )
 async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
     file_storage = await get_file_by_pixel_hash(pixel_hash, db)
@@ -103,21 +110,17 @@ async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(ge
         image_bytes: bytes = await get_image(file_storage)
         return Response(content=image_bytes, media_type=file_storage.mime)
     else:
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "code": "FILE_NOT_FOUND",
-                "message": f"File {pixel_hash} not found",
-            },
+            code=FILE_NOT_FOUND["code"],
+            message=FILE_NOT_FOUND["message"].format(pixel_hash=pixel_hash),
         )
 
 
 @files_router.get("/{path:path}", include_in_schema=False)
 async def metadata_catch_all(path: str):
-    raise HTTPException(
+    raise APIException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail={
-            "code": "METADATA_WEBSERVICE_NOT_FOUND",
-            "message": "Webservice requested not found.",
-        },
+        code="METADATA_WEBSERVICE_NOT_FOUND",
+        message="Webservice requested not found.",
     )

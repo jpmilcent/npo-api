@@ -5,7 +5,7 @@ from zipfile import ZipFile
 
 import exiftool
 import pyvips
-from fastapi import HTTPException, UploadFile, status
+from fastapi import UploadFile, status
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ from npo.core.file import (
 )
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
+from npo.routers.utils import APIException
 
 
 async def save_file(upload_file: UploadFile, file: File):
@@ -82,14 +83,12 @@ async def compute_perceptual_hash(file: File) -> None:
 
 async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> None:
     if await get_file_by_perceptual_hash(file.perceptual_hash, db):
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "code": "DUPLICATE_PERCEPTUAL_HASH",
-                "message": (
-                    f"File {file.name} with perceptual hash {file.perceptual_hash} already exists."
-                ),
-            },
+            code="DUPLICATE_PERCEPTUAL_HASH",
+            message=(
+                f"File {file.name} with perceptual hash {file.perceptual_hash} already exists."
+            ),
         )
 
 
@@ -136,15 +135,13 @@ async def extract_metadata(file: File) -> None:
 def check_gps_map_datum(file: File, metadata: dict) -> None:
     gps_datum = metadata.get("EXIF:GPSMapDatum")
     if gps_datum and gps_datum != "WGS-84":
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "code": "UNSUPPORTED_GPS_DATUM",
-                "message": (
-                    f"File {file.name} has unsupported GPS Map Datum: {gps_datum}. "
-                    "Only WGS-84 is supported."
-                ),
-            },
+            code="UNSUPPORTED_GPS_DATUM",
+            message=(
+                f"File {file.name} has unsupported GPS Map Datum: {gps_datum}. "
+                "Only WGS-84 is supported."
+            ),
         )
 
 
@@ -182,14 +179,12 @@ def parse_exif_date(date_str: str | None) -> datetime | None:
 
 async def check_duplicates_by_image_unique_id(file: File, db: AsyncSession) -> None:
     if await get_file_by_image_unique_id(file.image_unique_id, db):
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "code": "DUPLICATE_IMAGE_UNIQUE_ID",
-                "message": (
-                    f"File {file.name} with image unique ID {file.image_unique_id} already exists."
-                ),
-            },
+            code="DUPLICATE_IMAGE_UNIQUE_ID",
+            message=(
+                f"File {file.name} with image unique ID {file.image_unique_id} already exists."
+            ),
         )
 
 

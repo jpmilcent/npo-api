@@ -29,11 +29,15 @@ class APIException(HTTPException):
 
 
 def create_route_decorator(router: APIRouter):
-    def route_decorator(path: str, method: str = "GET", override_404: dict = None, **kwargs):
+    def route_decorator(
+        path: str, method: str = "GET", responses: dict = None, override_404: dict = None, **kwargs
+    ):
         if method.upper() not in VALID_HTTP_METHODS:
             raise ValueError(f"Invalid HTTP method: {method}. Must be one of {VALID_HTTP_METHODS}")
-
-        responses = COMMON_RESPONSES.copy()
+        if responses is None:
+            responses = COMMON_RESPONSES.copy()
+        else:
+            responses.update(COMMON_RESPONSES.copy())
         if override_404:
             overrides = {
                 status.HTTP_404_NOT_FOUND: {
