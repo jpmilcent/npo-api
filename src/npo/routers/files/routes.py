@@ -110,3 +110,14 @@ async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(ge
                 "message": f"File {pixel_hash} not found",
             },
         )
+
+
+@files_router.get("/{path:path}", include_in_schema=False)
+async def metadata_catch_all(path: str):
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "code": "METADATA_WEBSERVICE_NOT_FOUND",
+            "message": "Webservice requested not found.",
+        },
+    )
