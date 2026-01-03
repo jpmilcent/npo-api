@@ -125,7 +125,12 @@ def upload_image(client, shared_datadir):
     Fixture (Factory function) that provides a function to upload an image and return its hash.
     """
 
-    async def _uploader(image_name):
+    async def _uploader(
+        image_name,
+        return_full_response=False,
+        return_response_data=False,
+        return_attribute="pixel_hash",
+    ):
         image_path = shared_datadir / image_name
         image_mime = "image/jpeg"
 
@@ -134,10 +139,17 @@ def upload_image(client, shared_datadir):
             files = {"files": (image_name, f, image_mime)}
             response = await client.post("/files/upload", files=files)
 
-        assert response.status_code == status.HTTP_201_CREATED
-
-        # Return the pixel hash of the uploaded file
-        return response.json()[image_name]["pixel_hash"]
+        if return_full_response:
+            return response
+        else:
+            assert response.status_code == status.HTTP_201_CREATED
+            response_data = response.json()
+            if return_response_data:
+                return response_data
+            else:
+                assert image_name in response_data
+                assert return_attribute in response_data[image_name]
+                return response_data[image_name][return_attribute]
 
     return _uploader
 

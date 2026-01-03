@@ -149,6 +149,66 @@ def _verify_metadata_longitude(local_metatadata, response_image_data):
         assert response_image_data["longitude"] == expected_longitude
 
 
+async def test_upload_duplicate_file(client, shared_datadir, upload_image):
+    """
+    Test file upload of a duplicate file via the /files/upload endpoint.
+    Uses a real image file via pytest-datadir.
+    The second upload of the same file should be detected as a duplicate.
+    """
+    # shared_datadir points to the temporary folder containing a copy of tests/data
+    image_name = "image_01.jpg"
+
+    # First upload
+    response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
+
+    # Second upload (duplicate)
+    response2 = await upload_image(image_name, return_full_response=True)
+
+    assert response2.status_code == status.HTTP_409_CONFLICT
+    response_data2 = response2.json()
+    assert "detail" in response_data2
+    error_detail = response_data2["detail"]
+    assert error_detail["code"] == "DUPLICATE_PERCEPTUAL_HASH"
+    assert (
+        error_detail["message"]
+        == f"File {image_name} with perceptual hash {response1_perceptual_hash} already exists."
+    )
+
+
+async def test_upload_duplicate_perceptual_file(client, shared_datadir, upload_image):
+    """
+    Test file upload of a perceptual duplicate file via the /files/upload endpoint.
+    Uses two similar image files via pytest-datadir.
+    The second upload of a perceptually similar file should be detected as a duplicate.
+    """
+    # shared_datadir points to the temporary folder containing a copy of tests/data
+    image_name = "image_01.jpg"
+    image_path = shared_datadir / image_name
+
+    # First upload
+    response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
+
+    # Transform image using pyvips to create a perceptual duplicate
+    img = pyvips.Image.new_from_file(str(image_path), access="sequential")
+    img = img.resize(0.99)
+    modified_image_name = "image_01_modified.jpg"
+    modified_image_path = shared_datadir / modified_image_name
+    img.write_to_file(str(modified_image_path))
+
+    # Second upload (perceptual duplicate)
+    response2 = await upload_image(modified_image_name, return_full_response=True)
+
+    assert response2.status_code == status.HTTP_409_CONFLICT
+    response_data2 = response2.json()
+    assert "detail" in response_data2
+    error_detail = response_data2["detail"]
+    assert error_detail["code"] == "DUPLICATE_PERCEPTUAL_HASH"
+    assert (
+        error_detail["message"]
+        == f"File {modified_image_name} with perceptual hash {response1_perceptual_hash} already exists."
+    )
+
+
 async def test_get_tile(client, shared_datadir, upload_image):
     """
     Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint.
@@ -204,6 +264,23 @@ async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
     assert response.headers["content-type"] == tile_image_mime
 
 
+async def test_get_tile_not_found(verify_404):
+    """
+    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint for 404 response.
+    """
+
+    pixel_hash = "abcdef1234567890abcdef1234567890"
+    zoom = 2
+    x = 0
+    y = 1
+
+    await verify_404(
+        f"/files/{pixel_hash}/{zoom}/{x}/{y}.jpg",
+        "FILE_NOT_FOUND",
+        f"File {pixel_hash} not found.",
+    )
+
+
 async def test_get_image(client, shared_datadir, upload_image):
     """
     Test image retrieve via the /files/{file_hash} endpoint.
@@ -223,3 +300,17 @@ async def test_get_image(client, shared_datadir, upload_image):
     # Open tile image file in binary mode to compare with web service response
     with open(image_path, "rb") as file:
         assert response.content == file.read()
+
+
+async def test_get_image_not_found(verify_404):
+    """
+    Test image retrieve via the /files/{file_hash} endpoint for 404 response.
+    """
+
+    pixel_hash = "abcdef1234567890abcdef1234567890"
+
+    await verify_404(
+        f"/files/{pixel_hash}",
+        "FILE_NOT_FOUND",
+        f"File {pixel_hash} not found.",
+    )
