@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
@@ -118,8 +119,8 @@ async def client(override_db_session, override_settings):
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
-async def upload_image(client, shared_datadir):
+@pytest.fixture()
+def upload_image(client, shared_datadir):
     """
     Fixture (Factory function) that provides a function to upload an image and return its hash.
     """
@@ -139,3 +140,18 @@ async def upload_image(client, shared_datadir):
         return response.json()[image_name]["pixel_hash"]
 
     return _uploader
+
+
+@pytest.fixture()
+def verify_404(client):
+    async def _verify(url: str, expected_code: str, expected_message: str):
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.headers["content-type"] == "application/json"
+        data = response.json()
+        assert "detail" in data
+        error_detail = data["detail"]
+        assert error_detail["code"] == expected_code
+        assert error_detail["message"] == expected_message
+
+    return _verify
