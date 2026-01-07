@@ -4,6 +4,7 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import exiftool
+import magic
 import pyvips
 from fastapi import UploadFile, status
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
@@ -18,6 +19,29 @@ from npo.core.file import (
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 from npo.routers.utils import APIException
+
+async def build_file_infos(upload_file: UploadFile) -> File:
+    mime_type = await extract_mime_type(upload_file)
+
+    return File(
+        name=upload_file.filename,
+        path=os.path.join(config.settings.uploads_dir, upload_file.filename),
+        size=upload_file.size,
+        mime=mime_type,
+    )
+
+
+async def extract_mime_type(file: UploadFile) -> str:
+    content_sample = await file.read(2048)
+    mime_type = magic.from_buffer(content_sample, mime=True)
+
+    # Since DNG is often interpreted as TIFF, magic function may return "image/tiff".
+    # We correct this if extension is explicit.fix
+    if mime_type == "image/tiff" and file.filename.lower().endswith(".dng"):
+        mime_type = "image/x-adobe-dng"
+
+    await file.seek(0)
+    return mime_type
 
 
 async def save_file(upload_file: UploadFile, file: File):
@@ -79,6 +103,11 @@ async def compute_perceptual_hash(file: File) -> None:
                 hash_val |= 1 << (63 - (row * 8 + col))
 
     file.perceptual_hash = f"{hash_val:016x}"
+def is_web_format(file: File) -> bool:
+    is_web_format = (file.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
+        file.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
+    )
+    return is_web_format
 
 
 async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> None:
@@ -154,7 +183,7 @@ def extract_metadata_altitude(metadata: dict) -> float | None:
 
 def extract_metadata_latitude(metadata: dict) -> float | None:
     latitude = metadata.get("EXIF:GPSLatitude")
-    # Si la référence est "S" (South), la latitude est négative
+    # If the reference is "S" (South), the latitude is negative
     if latitude is not None and metadata.get("EXIF:GPSLatitudeRef") == "S":
         return -1.0 * latitude
     return latitude
@@ -162,7 +191,7 @@ def extract_metadata_latitude(metadata: dict) -> float | None:
 
 def extract_metadata_longitude(metadata: dict) -> float | None:
     longitude = metadata.get("EXIF:GPSLongitude")
-    # Si la référence est "W" (West), la longitude est négative
+    # If the reference is "W" (West), the longitude is negative
     if longitude is not None and metadata.get("EXIF:GPSLongitudeRef") == "W":
         return -1.0 * longitude
     return longitude

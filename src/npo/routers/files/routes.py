@@ -1,15 +1,13 @@
-import os
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo import config
 from npo.core.file import get_file_by_pixel_hash
 from npo.database import get_session
-from npo.routers.files.schemas import File
 from npo.routers.files.services import (
+    build_file_infos,
     check_duplicates_by_image_unique_id,
     check_duplicates_by_perceptual_hash,
     compute_hash,
@@ -20,6 +18,7 @@ from npo.routers.files.services import (
     extract_metadata,
     get_image,
     get_tile_from_dzi,
+    is_web_format,
     move_file,
     save_file,
     store_file_infos,
@@ -50,12 +49,7 @@ async def compute_upload_files(
     infos = {}
     # Process each received files
     for upload_file in files:
-        file = File(
-            name=upload_file.filename,
-            path=os.path.join(config.settings.uploads_dir, upload_file.filename),
-            size=upload_file.size,
-            mime=upload_file.content_type,
-        )
+        file = await build_file_infos(upload_file)
 
         await save_file(upload_file, file)
 
@@ -105,10 +99,11 @@ async def get_image_tile(
     override_404=FILE_NOT_FOUND,
 )
 async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
-    file_storage = await get_file_by_pixel_hash(pixel_hash, db)
-    if file_storage:
-        image_bytes: bytes = await get_image(file_storage)
-        return Response(content=image_bytes, media_type=file_storage.mime)
+    file = await get_file_by_pixel_hash(pixel_hash, db)
+    if file:
+        image_bytes: bytes = await get_image(file)
+        media_type = file.mime if is_web_format(file) else "image/jpeg"
+        return Response(content=image_bytes, media_type=media_type)
     else:
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
