@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.core.file import get_file_by_pixel_hash
+from npo.core.file import get_file_by_pixel_hash, get_files_list
 from npo.database import get_session
 from npo.routers.files.services import (
     build_file_infos,
@@ -36,6 +36,31 @@ files_router = APIRouter(
     tags=["files"],
 )
 files_route = create_route_decorator(files_router)
+
+
+@files_router.get(
+    "/",
+    summary="Get paginated files list",
+)
+async def root(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    page: int = 1,
+    size: int = 100,
+):
+    skip = (page - 1) * size
+    limit = size
+    files, total = await get_files_list(db, skip=skip, limit=limit)
+    return {
+        "meta": {
+            "pagination": {
+                "total_items": total,
+                "total_pages": (total + limit - 1) // limit,
+                "current_page": page,
+                "items_per_page": limit,
+            }
+        },
+        "data": files,
+    }
 
 
 @files_router.post(

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.models.file import File as FileStorage
@@ -24,5 +24,26 @@ async def get_file_by_perceptual_hash(perceptual_hash: str, db: AsyncSession) ->
 
 async def get_file_by_image_unique_id(image_unique_id: str, db: AsyncSession) -> FileStorage | None:
     stmt = select(FileStorage).filter_by(image_unique_id=image_unique_id)
+async def get_files_list(db: AsyncSession, skip: int = 0, limit: int = 100):
+    stmt_count = select(func.count()).select_from(FileStorage)
+    total = await db.scalar(stmt_count)
+
+    stmt = (
+        select(
+            FileStorage.id,
+            FileStorage.pixel_hash.label("hash"),
+            FileStorage.name,
+            FileStorage.mime,
+            FileStorage.size,
+            FileStorage.datetime_shooting,
+            FileStorage.latitude,
+            FileStorage.longitude,
+            FileStorage.created_at,
+            FileStorage.updated_at,
+        )
+        .order_by(FileStorage.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    return result.mappings().all(), total
