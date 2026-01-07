@@ -22,8 +22,17 @@ async def get_file_by_perceptual_hash(perceptual_hash: str, db: AsyncSession) ->
     return result.scalar_one_or_none()
 
 
-async def get_file_by_image_unique_id(image_unique_id: str, db: AsyncSession) -> FileStorage | None:
-    stmt = select(FileStorage).filter_by(image_unique_id=image_unique_id)
+async def get_file_by_image_unique_id(
+    image_unique_id: str | None, db: AsyncSession
+) -> FileStorage | None:
+    file = None
+    if image_unique_id is not None:
+        stmt = select(FileStorage).filter_by(image_unique_id=image_unique_id)
+        result = await db.execute(stmt)
+        file = result.scalar_one_or_none()
+    return file
+
+
 async def get_files_list(db: AsyncSession, skip: int = 0, limit: int = 100):
     stmt_count = select(func.count()).select_from(FileStorage)
     total = await db.scalar(stmt_count)

@@ -1,4 +1,7 @@
+import asyncio
 import hashlib
+import logging
+import mimetypes
 import os
 from datetime import datetime
 from zipfile import ZipFile
@@ -19,6 +22,9 @@ from npo.core.file import (
 from npo.models.file import File as FileStorage
 from npo.routers.files.schemas import File
 from npo.routers.utils import APIException
+
+logger = logging.getLogger(__name__)
+
 
 async def build_file_infos(upload_file: UploadFile) -> File:
     mime_type = await extract_mime_type(upload_file)
@@ -64,17 +70,74 @@ async def compute_hash(file: File) -> None:
         file.file_hash = hashlib.md5(data).hexdigest()
 
 
+def _compute_pixel_hash_sync(file: File, preview_bytes: bytes | None = None) -> str:
+    # For RAW/DNG, we must force demosaicing (development) to get the actual visual content.
+    # Converting to sRGB ensures the RAW data is developed into visible pixels.
+    if preview_bytes:
+        img = pyvips.Image.new_from_buffer(preview_bytes, "")
+    elif is_web_format(file):
+        img = pyvips.Image.new_from_file(file.path, access="sequential")
+    else:
+        img = pyvips.Image.new_from_file(file.path)
+        img = img.colourspace("srgb")
+
+    file_hash = hashlib.blake2b(digest_size=16)
+
+    # Process image in chunks using crop() which supports sequential streaming
+    chunk_height = 512
+
+    for y in range(0, img.height, chunk_height):
+        height_to_process = min(chunk_height, img.height - y)
+        data = img.crop(0, y, img.width, height_to_process).write_to_memory()
+        file_hash.update(data)
+
+    return file_hash.hexdigest()
+
+
 async def compute_pixel_hash(file: File) -> None:
     """
     Computes a BLAKE2b hash based on raw image pixels via pyvips.
     Ignores metadata (EXIF, etc).
     """
-    img = pyvips.Image.new_from_file(file.path, access="sequential")
+    try:
+        preview_bytes = None
+        if not is_web_format(file):
+            preview_bytes = await extract_jpeg_preview(file)
 
-    # write_to_memory() forces decoding and returns pixel bytes (RGB/RGBA...)
-    data = img.write_to_memory()
-    # digest_size=16 produces 128 bits (32 hex chars), same format as MD5 but faster/safer
-    file.pixel_hash = hashlib.blake2b(data, digest_size=16).hexdigest()
+        loop = asyncio.get_running_loop()
+        file.pixel_hash = await loop.run_in_executor(
+            None, _compute_pixel_hash_sync, file, preview_bytes
+        )
+    except pyvips.Error as e:
+        logger.error(f"Error computing pixel hash for {file.path}: {e}")
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="IMAGE_DECODING_ERROR",
+            message=f"Unable to decode image file {file.name}. The file might be corrupted or unsupported.",
+        ) from e
+
+
+def _compute_perceptual_hash_sync(path: str | None, data: bytes | None) -> str:
+    img = None
+    if data:
+        img = pyvips.Image.new_from_buffer(data, "")
+    elif path:
+        img = pyvips.Image.new_from_file(path, access="sequential")
+
+    if img is None:
+        raise pyvips.Error("No image source available for perceptual hash")
+
+    img = img.thumbnail_image(9, height=8, size="force")
+    img = img.colourspace("b-w")
+    pixels = img.write_to_memory()
+
+    hash_val = 0
+    for row in range(8):
+        for col in range(8):
+            if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
+                hash_val |= 1 << (63 - (row * 8 + col))
+
+    return f"{hash_val:016x}"
 
 
 async def compute_perceptual_hash(file: File) -> None:
@@ -82,32 +145,72 @@ async def compute_perceptual_hash(file: File) -> None:
     Computes a perceptual hash (dHash) using pyvips.
     Resistant to resizing and compression.
     """
-    # Load and resize to 9x8 pixels (force size without preserving aspect ratio)
-    # Use access="sequential" to force streaming mode and save memory
-    img = pyvips.Image.new_from_file(file.path, access="sequential")
-    img = img.thumbnail_image(9, height=8, size="force")
+    try:
+        web_format = is_web_format(file)
+        preview_bytes = None
+        path = None
 
-    # Convert to black and white
-    img = img.colourspace("b-w")
+        if web_format:
+            path = file.path
+        else:
+            preview_bytes = await extract_jpeg_preview(file)
 
-    # Retrieve raw pixel data (9x8 = 72 bytes)
-    pixels = img.write_to_memory()
+        loop = asyncio.get_running_loop()
+        file.perceptual_hash = await loop.run_in_executor(
+            None, _compute_perceptual_hash_sync, path, preview_bytes
+        )
+    except pyvips.Error as e:
+        logger.error(f"Error computing perceptual hash for {file.path}: {e}")
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="IMAGE_PROCESSING_ERROR",
+            message=f"Unable to process image file {file.name} for perceptual hashing.",
+        ) from e
 
-    hash_val = 0
-    # Iterate over the 8 rows
-    for row in range(8):
-        # Iterate over the 8 columns from left to right
-        for col in range(8):
-            # If the left pixel is brighter than the right one, set the bit to 1
-            if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
-                hash_val |= 1 << (63 - (row * 8 + col))
 
-    file.perceptual_hash = f"{hash_val:016x}"
 def is_web_format(file: File) -> bool:
     is_web_format = (file.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
         file.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
     )
     return is_web_format
+
+
+async def extract_jpeg_preview(file: File) -> bytes | None:
+    preview_bytes = None
+    # On essaie d'abord PreviewImage, puis JpgFromRaw si le premier échoue
+    for tag in ["-PreviewImage", "-JpgFromRaw"]:
+        try:
+            # Extraction binaire (-b) du tag via exiftool
+            # Utilisation de asyncio pour ne pas bloquer la boucle d'événements
+            proc = await asyncio.create_subprocess_exec(
+                "exiftool",
+                "-b",
+                tag,
+                file.path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                limit=1024 * 1024 * 50,  # Augmentation du buffer (50 Mo) pour les grosses images
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30.0)
+            except asyncio.TimeoutError:
+                try:
+                    proc.kill()
+                except OSError:
+                    pass
+                continue
+
+            if proc.returncode != 0:
+                logger.warning(
+                    f"Exiftool error for {file.path} with tag {tag}: {stderr.decode().strip()}"
+                )
+
+            if proc.returncode == 0 and stdout:
+                preview_bytes = stdout
+                break
+        except Exception as e:
+            logger.warning(f"Error extracting preview for {file.path} with tag {tag}: {e}")
+    return preview_bytes
 
 
 async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> None:
@@ -133,13 +236,22 @@ async def compute_hash_pathes(file: File) -> None:
 
 
 async def move_file(file: File) -> None:
-    # TODO: Use file mime type to determine file extension
+    extension = await get_file_extension(file)
     storage_path = os.path.join(
-        config.settings.storage_dir, file.path_hash_dir, file.path_hash_file + ".jpg"
+        config.settings.storage_dir, file.path_hash_dir, file.path_hash_file + extension
     )
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     os.rename(file.path, storage_path)
     file.path = storage_path
+
+
+async def get_file_extension(file: File) -> str:
+    if not file.mime:
+        return ""
+    extension = mimetypes.guess_extension(file.mime)
+    if extension is None and file.mime.lower() == "image/x-adobe-dng":
+        extension = ".dng"
+    return extension if extension else ""
 
 
 async def extract_metadata(file: File) -> None:
@@ -234,7 +346,13 @@ async def store_file_infos(file: File, db: AsyncSession) -> None:
 
 
 async def create_dzi(file: File) -> None:
-    img = pyvips.Image.new_from_file(file.path)
+    web_format = is_web_format(file)
+    if not web_format:
+        preview_bytes = await extract_jpeg_preview(file)
+        if preview_bytes:
+            img = pyvips.Image.new_from_buffer(preview_bytes, "")
+    else:
+        img = pyvips.Image.new_from_file(file.path)
     img = img.autorot()
     dzi_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".szi"
     img.dzsave(
@@ -264,10 +382,16 @@ async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> byt
 
 
 async def get_image(file: FileStorage) -> bytes | None:
-    img_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".jpg"
-
-    try:
-        with open(img_path, "rb") as img_file:
-            return img_file.read()
-    except FileNotFoundError:
-        return None
+    web_format = is_web_format(file)
+    if not web_format:
+        return await extract_jpeg_preview(file)
+    else:
+        try:
+            extension = await get_file_extension(file)
+            img_path = (
+                config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + extension
+            )
+            with open(img_path, "rb") as img_file:
+                return img_file.read()
+        except FileNotFoundError:
+            return None
