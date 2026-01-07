@@ -142,7 +142,7 @@ def upload_image(client, shared_datadir):
         if return_full_response:
             return response
         else:
-            assert response.status_code == status.HTTP_201_CREATED
+            assert response.status_code == status.HTTP_201_CREATED, response.json()
             response_data = response.json()
             if return_response_data:
                 return response_data
