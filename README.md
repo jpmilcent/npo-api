@@ -3,14 +3,14 @@
 
 ## Development
 
-We use :
+We use:
 - [uv](https://docs.astral.sh/uv/) to manage the project
 - [Ruff](https://docs.astral.sh/ruff/) to lint and format code
 - [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
 
 ### Installation and Usage
 
-Check that you have Exiftool install on your system :
+Check that you have Exiftool installed on your system:
 
 ```bash
 exiftool --version
@@ -90,3 +90,6 @@ For that, you need to create a file `.env.test` base on `.env.test.sample` and e
 parameter `TEST_DATABASE_URL`.
 
 You can also use the SQLAlchemy models files to create the database content or the Alembic migrations with the parameter `USE_ALEMBIC_MIGRATIONS` avec la valeur `True`.
+
+All large files (> 10MB) used by tests are stored in the `v0.0.1-alpha` release on the GitHub repository.
+The first time, a fixture automatically downloads these files (mostly RAW and DNG files) in the `test/data/` directory.

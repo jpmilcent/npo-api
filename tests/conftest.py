@@ -1,5 +1,9 @@
+import logging
 import os
+import shutil
+from pathlib import Path
 
+import httpx
 import pytest
 import pytest_asyncio
 from alembic import command
@@ -15,6 +19,16 @@ from npo.main import app
 # URL for an in-memory SQLite database by default, specific to tests
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1", "true", "yes")
+EXTERNAL_FILES_DIR = "https://github.com/jpmilcent/npo-api/releases/download/v0.0.1-alpha"
+# Dictionary of external files: Name -> URL
+EXTERNAL_FILES = {
+    "image_03.dng": f"{EXTERNAL_FILES_DIR}/image_03.dng",
+    "image_04.dng": f"{EXTERNAL_FILES_DIR}/image_04.dng",
+    "image_05.nef": f"{EXTERNAL_FILES_DIR}/image_05.nef",
+    "image_06.nef": f"{EXTERNAL_FILES_DIR}/image_06.nef",
+}
+
+logger = logging.getLogger(__name__)
 
 
 def pytest_report_header(config):
@@ -92,9 +106,7 @@ def override_settings(tmp_path):
     # Redirect to an isolated temporary directory (tmp_path)
     # This avoids writing into tests/data/ and polluting the source tree
     config.settings.uploads_dir = f"{tmp_path}/uploads/"
-    # os.makedirs(config.settings.uploads_dir, exist_ok=True)
     config.settings.storage_dir = f"{tmp_path}/storage/"
-    # os.makedirs(config.settings.storage_dir, exist_ok=True)
 
     yield tmp_path
 
@@ -167,3 +179,45 @@ def verify_404(client):
         assert error_detail["message"] == expected_message
 
     return _verify
+
+
+@pytest.fixture(scope="session")
+def large_file_cache():
+    """Creates and returns the path to the persistent cache directory."""
+    cache_dir = Path(__file__).parent / ".cache"
+    cache_dir.mkdir(exist_ok=True)
+    return cache_dir
+
+
+@pytest.fixture()
+def ensure_large_files(shared_datadir, large_file_cache):
+    """
+    Fixture that ensures the requested files are present in shared_datadir.
+    It downloads them to the cache if necessary, then copies them to the test directory.
+    This prevents pytest-datadir from copying all files present
+    in tests/data to shared_datadir (temporary directory) during each test session.
+    """
+
+    def _ensure(filenames):
+        for filename in filenames:
+            if filename not in EXTERNAL_FILES:
+                continue
+
+            cache_path = large_file_cache / filename
+
+            # Download if not in cache
+            if not cache_path.exists():
+                url = EXTERNAL_FILES[filename]
+                logger.info(f"Downloading {filename} from {url}...")
+                with httpx.stream("GET", url, follow_redirects=True) as response:
+                    response.raise_for_status()
+                    with open(cache_path, "wb") as f:
+                        for chunk in response.iter_bytes():
+                            f.write(chunk)
+
+            # Copy from cache to temporary directory for test (shared_datadir)
+            dest_path = shared_datadir / filename
+            if not dest_path.exists():
+                shutil.copy(cache_path, dest_path)
+
+    return _ensure

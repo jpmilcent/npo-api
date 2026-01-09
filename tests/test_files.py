@@ -67,9 +67,9 @@ async def test_upload_file(client, shared_datadir):
 def _verify_pixel_hash(response_data, image_name, image_path):
     # Verify pixel hash
     img = pyvips.Image.new_from_file(image_path, access="sequential")
-    # write_to_memory() force le décodage et retourne les bytes des pixels (RGB/RGBA...)
+    # write_to_memory() forces decoding and returns the pixel bytes (RGB/RGBA...)
     data = img.write_to_memory()
-    # digest_size=16 produit 128 bits (32 hex chars), format identique à MD5 mais plus rapide/sûr
+    # digest_size=16 produces 128 bits (32 hex chars), a format identical to MD5 but faster/safer
     expected_hash = hashlib.blake2b(data, digest_size=16).hexdigest()
     assert response_data[image_name]["pixel_hash"] == expected_hash
 
@@ -314,3 +314,40 @@ async def test_get_image_not_found(verify_404):
         "FILE_NOT_FOUND",
         f"File {pixel_hash} not found.",
     )
+
+
+async def test_mime_type_for_dng(upload_image, ensure_large_files):
+    dng = "image_03.dng"
+    ensure_large_files([dng])
+    mime_type = await upload_image(dng, return_attribute="mime")
+    assert mime_type == "image/x-adobe-dng"
+
+
+async def test_perceptual_hash_for_dng(upload_image, ensure_large_files):
+    dng = "image_04.dng"
+    ensure_large_files([dng])
+    perceptual_hash = await upload_image(dng, return_attribute="perceptual_hash")
+    assert len(perceptual_hash) == 16
+    assert perceptual_hash != "0000000000000000"
+
+
+async def test_distinct_pixel_hash_for_dng(upload_image, ensure_large_files):
+    dng1 = "image_03.dng"
+    dng2 = "image_04.dng"
+    ensure_large_files([dng1, dng2])
+
+    pixel_hash_1 = await upload_image(dng1)
+    pixel_hash_2 = await upload_image(dng2)
+
+    assert pixel_hash_1 != pixel_hash_2
+
+
+async def test_distinct_pixel_hash_for_raw(upload_image, ensure_large_files):
+    raw1 = "image_05.nef"
+    raw2 = "image_06.nef"
+    ensure_large_files([raw1, raw2])
+
+    pixel_hash_1 = await upload_image(raw1)
+    pixel_hash_2 = await upload_image(raw2)
+
+    assert pixel_hash_1 != pixel_hash_2

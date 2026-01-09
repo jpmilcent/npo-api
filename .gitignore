@@ -12,3 +12,6 @@ wheels/
 # Config files
 .env
 .env.test
+
+# Large binary files for tests
+tests/.cache/
