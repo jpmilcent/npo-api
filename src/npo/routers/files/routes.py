@@ -118,7 +118,7 @@ async def get_image_tile(
 
 @files_route(
     "/{pixel_hash}",
-    summary="Get file image by hash",
+    summary="Get file image by pixel hash",
     responses={200: {"content": {"image/jpeg": {}}}},
     response_class=Response,
     override_404=FILE_NOT_FOUND,
