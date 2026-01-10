@@ -93,3 +93,8 @@ You can also use the SQLAlchemy models files to create the database content or t
 
 All large files (> 10MB) used by tests are stored in the `v0.0.1-alpha` release on the GitHub repository.
 The first time, a fixture automatically downloads these files (mostly RAW and DNG files) in the `test/data/` directory.
+
+To update the coverage report use: `uv run pytest --cov --cov-report=html`
+To view the report in your browser, open the _index.html_ file in the `htmlcov` directory.
+
+By default, pytest shows durations for the 5 longest tests. Use `uv run pytest --durations=0` to show all test durations.
