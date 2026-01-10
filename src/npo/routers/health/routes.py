@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +25,7 @@ health_router = APIRouter(
     status_code=status.HTTP_200_OK,
     response_model=HealthCheck,
 )
-async def check_health(session: AsyncSession = Depends(get_session)) -> HealthCheck:
+async def check_health(session: Annotated[AsyncSession, Depends(get_session)]) -> HealthCheck:
     """Endpoint to perform a healthcheck."""
     health = HealthCheck()
     db_status = await check_database(session)

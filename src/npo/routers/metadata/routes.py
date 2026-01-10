@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from npo.constants import ErrorCode
 from npo.core.file import get_file_by_pixel_hash
 from npo.database import get_session
 from npo.routers.metadata.services import (
@@ -23,16 +24,16 @@ from npo.routers.metadata.services import (
 )
 from npo.routers.utils import APIException, create_route_decorator
 
-RAW_METADATA_NOT_FOUND = {
+RAW_METADATA_NOT_FOUND_RESPONSE = {
     "description": "Raw metadata not found",
-    "code": "RAW_METADATA_NOT_FOUND",
-    "message": "Raw metadata for file {pixel_hash} not found.",
+    "code": ErrorCode.RAW_METADATA_NOT_FOUND,
+    "message": ErrorCode.RAW_METADATA_NOT_FOUND.message,
 }
 
-PHOTOGRAPHY_METADATA_NOT_FOUND = {
+PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE = {
     "description": "Photography metadata not found",
-    "code": "PHOTOGRAPHY_METADATA_NOT_FOUND",
-    "message": "Photography metadata for file {pixel_hash} not found.",
+    "code": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
+    "message": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.message,
 }
 
 metadata_router = APIRouter(
@@ -47,7 +48,7 @@ metadata_route = create_route_decorator(metadata_router)
 @metadata_route(
     "/{pixel_hash}",
     summary="Raw metadata by pixel hash",
-    override_404=RAW_METADATA_NOT_FOUND,
+    override_404=RAW_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
     file_storage = await get_file_by_pixel_hash(pixel_hash, db)
@@ -56,15 +57,15 @@ async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(
     else:
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
-            code=RAW_METADATA_NOT_FOUND["code"],
-            message=RAW_METADATA_NOT_FOUND["message"].format(pixel_hash=pixel_hash),
+            code=ErrorCode.RAW_METADATA_NOT_FOUND,
+            message=ErrorCode.RAW_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
         )
 
 
 @metadata_route(
     "/{pixel_hash}/photography",
     summary="Selected photography metadata by pixel hash",
-    override_404=PHOTOGRAPHY_METADATA_NOT_FOUND,
+    override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_photography_metadata(
     pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]
@@ -105,8 +106,8 @@ async def get_photography_metadata(
     else:
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
-            code=PHOTOGRAPHY_METADATA_NOT_FOUND["code"],
-            message=PHOTOGRAPHY_METADATA_NOT_FOUND["message"].format(pixel_hash=pixel_hash),
+            code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
+            message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
         )
 
 
@@ -114,6 +115,6 @@ async def get_photography_metadata(
 async def metadata_catch_all(path: str):
     raise APIException(
         status_code=status.HTTP_404_NOT_FOUND,
-        code="METADATA_WEBSERVICE_NOT_FOUND",
+        code=ErrorCode.METADATA_WEBSERVICE_NOT_FOUND,
         message=f"Webservice /metadata/{path} requested not found.",
     )
