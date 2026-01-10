@@ -1,18 +1,29 @@
-# Python-generated files
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+
+# Pytest
+.pytest_cache/
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Environment variables
+.env
+.env.test
+
+# Project specific test cache (downloaded large files)
+tests/.cache/
+
+# Distribution / packaging
 build/
 dist/
 wheels/
 *.egg-info
-.pytest_cache/
-
-# Virtual environments
-.venv
-
-# Config files
-.env
-.env.test
-
-# Large binary files for tests
-tests/.cache/
