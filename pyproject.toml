@@ -35,12 +35,12 @@ dev = [
     "ruff>=0.14.10",
 ]
 
-[tool.setuptools]
-  package-dir = {"" = "src"}
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.setuptools.packages.find]
-  where = ["src"]
-  namespaces = true
+where = ["src"]
+namespaces = true
 
 [tool.ruff]
 line-length = 100
@@ -72,6 +72,13 @@ combine-as-imports = true
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = true
 
+[tool.alembic]
+script_location = "%(here)s/migrations"
+prepend_sys_path = [
+    ".",
+    "src",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -86,10 +93,3 @@ log_cli = false
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-
-[tool.alembic]
-script_location = "%(here)s/migrations"
-prepend_sys_path = [
-    ".",
-    "src",
-]
