@@ -5,6 +5,17 @@ import pyvips
 from fastapi import status
 
 from npo import config
+from tests.constants import (
+    ERROR_DUPLICATE_PERCEPTUAL_HASH,
+    ERROR_FILE_NOT_FOUND,
+    IMAGE_01_JPG,
+    IMAGE_02_JPG,
+    IMAGE_03_DNG,
+    IMAGE_04_DNG,
+    IMAGE_05_NEF,
+    IMAGE_06_NEF,
+    PERCEPTUAL_HASH_LENGTH,
+)
 
 
 async def test_upload_file(shared_datadir, upload_image):
@@ -13,7 +24,7 @@ async def test_upload_file(shared_datadir, upload_image):
     Uses a real image file via pytest-datadir.
     """
     # shared_datadir points to the temporary folder containing a copy of tests/data
-    image_name = "image_01.jpg"
+    image_name = IMAGE_01_JPG
     image_path = shared_datadir / image_name
     image_mime = "image/jpeg"
 
@@ -153,7 +164,7 @@ async def test_upload_duplicate_file(client, shared_datadir, upload_image):
     The second upload of the same file should be detected as a duplicate.
     """
     # shared_datadir points to the temporary folder containing a copy of tests/data
-    image_name = "image_01.jpg"
+    image_name = IMAGE_01_JPG
 
     # First upload
     response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
@@ -165,7 +176,7 @@ async def test_upload_duplicate_file(client, shared_datadir, upload_image):
     response_data2 = response2.json()
     assert "detail" in response_data2
     error_detail = response_data2["detail"]
-    assert error_detail["code"] == "DUPLICATE_PERCEPTUAL_HASH"
+    assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
     assert (
         error_detail["message"]
         == f"File {image_name} with perceptual hash {response1_perceptual_hash} already exists."
@@ -179,7 +190,7 @@ async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
     The second upload of a perceptually similar file should be detected as a duplicate.
     """
     # shared_datadir points to the temporary folder containing a copy of tests/data
-    image_name = "image_01.jpg"
+    image_name = IMAGE_01_JPG
     image_path = shared_datadir / image_name
 
     # First upload
@@ -199,10 +210,10 @@ async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
     response_data2 = response2.json()
     assert "detail" in response_data2
     error_detail = response_data2["detail"]
-    assert error_detail["code"] == "DUPLICATE_PERCEPTUAL_HASH"
+    assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
     assert (
-        error_detail["message"]
-        == f"File {modified_image_name} with perceptual hash {response1_perceptual_hash} already exists."
+        error_detail["message"] == f"File {modified_image_name} with perceptual hash "
+        f"{response1_perceptual_hash} already exists."
     )
 
 
@@ -212,7 +223,7 @@ async def test_get_tile(client, shared_datadir, upload_image):
     Compare with a real tile image file via pytest-datadir.
     """
 
-    image_name = "image_02.jpg"
+    image_name = IMAGE_02_JPG
     tile_image_name = "image_02_z2_x0_y1.jpg"
     tile_image_path = shared_datadir / tile_image_name
     tile_image_mime = "image/jpeg"
@@ -240,7 +251,7 @@ async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
     Compare with a real tile image file via pytest-datadir.
     """
 
-    image_name = "image_01.jpg"
+    image_name = IMAGE_01_JPG
     tile_image_name = "image_01_z3_x1_y1.jpg"
     tile_image_path = shared_datadir / tile_image_name
     tile_image_mime = "image/jpeg"
@@ -263,7 +274,8 @@ async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
 
 async def test_get_tile_not_found(verify_404):
     """
-    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint for 404 response.
+    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint
+    for 404 response.
     """
 
     pixel_hash = "abcdef1234567890abcdef1234567890"
@@ -273,7 +285,7 @@ async def test_get_tile_not_found(verify_404):
 
     await verify_404(
         f"/files/{pixel_hash}/{zoom}/{x}/{y}.jpg",
-        "FILE_NOT_FOUND",
+        ERROR_FILE_NOT_FOUND,
         f"File {pixel_hash} not found.",
     )
 
@@ -284,7 +296,7 @@ async def test_get_image(client, shared_datadir, upload_image):
     Compare with a real image file via pytest-datadir.
     """
 
-    image_name = "image_02.jpg"
+    image_name = IMAGE_02_JPG
     image_path = shared_datadir / image_name
 
     uploaded_file_hash = await upload_image(image_name)
@@ -306,27 +318,27 @@ async def test_get_image_not_found(verify_404):
 
     await verify_404(
         f"/files/{pixel_hash}",
-        "FILE_NOT_FOUND",
+        ERROR_FILE_NOT_FOUND,
         f"File {pixel_hash} not found.",
     )
 
 
 async def test_mime_type_for_dng(upload_image):
-    dng = "image_03.dng"
+    dng = IMAGE_03_DNG
     mime_type = await upload_image(dng, return_attribute="mime")
     assert mime_type == "image/x-adobe-dng"
 
 
 async def test_perceptual_hash_for_dng(upload_image):
-    dng = "image_04.dng"
+    dng = IMAGE_04_DNG
     perceptual_hash = await upload_image(dng, return_attribute="perceptual_hash")
-    assert len(perceptual_hash) == 16
+    assert len(perceptual_hash) == PERCEPTUAL_HASH_LENGTH
     assert perceptual_hash != "0000000000000000"
 
 
 async def test_distinct_pixel_hash_for_dng(upload_image):
-    dng1 = "image_03.dng"
-    dng2 = "image_04.dng"
+    dng1 = IMAGE_03_DNG
+    dng2 = IMAGE_04_DNG
 
     pixel_hash_1 = await upload_image(dng1)
     pixel_hash_2 = await upload_image(dng2)
@@ -335,8 +347,8 @@ async def test_distinct_pixel_hash_for_dng(upload_image):
 
 
 async def test_distinct_pixel_hash_for_raw(upload_image):
-    raw1 = "image_05.nef"
-    raw2 = "image_06.nef"
+    raw1 = IMAGE_05_NEF
+    raw2 = IMAGE_06_NEF
 
     pixel_hash_1 = await upload_image(raw1)
     pixel_hash_2 = await upload_image(raw2)

@@ -1,11 +1,18 @@
 import exiftool
 from fastapi import status
 
+from tests.constants import (
+    ERROR_METADATA_WEBSERVICE_NOT_FOUND,
+    ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
+    ERROR_RAW_METADATA_NOT_FOUND,
+    IMAGE_01_JPG,
+)
+
 
 async def test_metadata(client, shared_datadir, upload_image):
     """Test the metadata endpoint."""
 
-    image_name = "image_01.jpg"
+    image_name = IMAGE_01_JPG
     image_path = shared_datadir / image_name
 
     uploaded_file_hash = await upload_image(image_name)
@@ -33,7 +40,7 @@ async def test_raw_metadata_not_found(verify_404):
     pixel_hash = "abcdef1234567890abcdef1234567890"
     await verify_404(
         f"/metadata/{pixel_hash}",
-        "RAW_METADATA_NOT_FOUND",
+        ERROR_RAW_METADATA_NOT_FOUND,
         f"Raw metadata for file {pixel_hash} not found.",
     )
 
@@ -44,7 +51,7 @@ async def test_photography_metadata_not_found(verify_404):
     pixel_hash = "abcdef1234567890abcdef1234567890"
     await verify_404(
         f"/metadata/{pixel_hash}/photography",
-        "PHOTOGRAPHY_METADATA_NOT_FOUND",
+        ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
         f"Photography metadata for file {pixel_hash} not found.",
     )
 
@@ -55,6 +62,6 @@ async def test_metadata_catch_all(verify_404):
     unknown_path = "some/random/path"
     await verify_404(
         f"/metadata/{unknown_path}",
-        "METADATA_WEBSERVICE_NOT_FOUND",
+        ERROR_METADATA_WEBSERVICE_NOT_FOUND,
         f"Webservice /metadata/{unknown_path} requested not found.",
     )

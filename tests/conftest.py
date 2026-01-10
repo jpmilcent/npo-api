@@ -14,20 +14,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from npo import config
 from npo.database import Base, get_session
 from npo.main import app
+from tests.constants import EXTERNAL_FILES
 
 # URL for an in-memory SQLite database by default, specific to tests
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1", "true", "yes")
-EXTERNAL_FILES_DIR = "https://github.com/jpmilcent/npo-api/releases/download/v0.0.1-alpha"
-# Dictionary of external files: Name -> URL
-EXTERNAL_FILES = {
-    "image_01.jpg": f"{EXTERNAL_FILES_DIR}/image_01.jpg",
-    "image_02.jpg": f"{EXTERNAL_FILES_DIR}/image_02.jpg",
-    "image_03.dng": f"{EXTERNAL_FILES_DIR}/image_03.dng",
-    "image_04.dng": f"{EXTERNAL_FILES_DIR}/image_04.dng",
-    "image_05.nef": f"{EXTERNAL_FILES_DIR}/image_05.nef",
-    "image_06.nef": f"{EXTERNAL_FILES_DIR}/image_06.nef",
-}
 
 logger = logging.getLogger(__name__)
 
