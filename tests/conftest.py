@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from pathlib import Path
 
 import httpx
@@ -22,6 +21,8 @@ USE_ALEMBIC_MIGRATIONS = os.getenv("USE_ALEMBIC_MIGRATIONS", "0").lower() in ("1
 EXTERNAL_FILES_DIR = "https://github.com/jpmilcent/npo-api/releases/download/v0.0.1-alpha"
 # Dictionary of external files: Name -> URL
 EXTERNAL_FILES = {
+    "image_01.jpg": f"{EXTERNAL_FILES_DIR}/image_01.jpg",
+    "image_02.jpg": f"{EXTERNAL_FILES_DIR}/image_02.jpg",
     "image_03.dng": f"{EXTERNAL_FILES_DIR}/image_03.dng",
     "image_04.dng": f"{EXTERNAL_FILES_DIR}/image_04.dng",
     "image_05.nef": f"{EXTERNAL_FILES_DIR}/image_05.nef",
@@ -29,6 +30,16 @@ EXTERNAL_FILES = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+class MockResponse:
+    def __init__(self, json_data, status_code=201):
+        self.json_data = json_data
+        self.status_code = status_code
+        self.headers = {"content-type": "application/json"}
+
+    def json(self):
+        return self.json_data
 
 
 def pytest_report_header(config):
@@ -117,8 +128,8 @@ async def override_db_session(db_engine):
         await transaction.rollback()
 
 
-@pytest.fixture()
-def override_settings(tmp_path):
+@pytest.fixture(scope="session")
+def override_settings(tmp_path_factory):
     """
     Override configuration to use temporary directories for uploads and storage.
     """
@@ -126,12 +137,13 @@ def override_settings(tmp_path):
     original_uploads_dir = config.settings.uploads_dir
     original_storage_dir = config.settings.storage_dir
 
-    # Redirect to an isolated temporary directory (tmp_path)
+    # Redirect to an isolated temporary directory (tmp_path_factory for session scope)
     # This avoids writing into tests/data/ and polluting the source tree
-    config.settings.uploads_dir = f"{tmp_path}/uploads/"
-    config.settings.storage_dir = f"{tmp_path}/storage/"
+    base_path = tmp_path_factory.mktemp("data")
+    config.settings.uploads_dir = f"{base_path}/uploads/"
+    config.settings.storage_dir = f"{base_path}/storage/"
 
-    yield tmp_path
+    yield base_path
 
     # Restore configuration
     config.settings.uploads_dir = original_uploads_dir
@@ -154,25 +166,82 @@ async def client(override_db_session, override_settings):
     app.dependency_overrides.clear()
 
 
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def session_client(db_engine, override_settings):
+    """
+    Fixture providing a client that commits changes (for seeding data).
+    """
+    # Create a session maker that commits (unlike the test one that rolls back)
+    SessionLocal = async_sessionmaker(bind=db_engine, expire_on_commit=False)
+
+    async def get_session_override():
+        async with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = get_session_override
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def seed_data(session_client, large_file_cache):
+    """
+    Uploads common images once per session and returns their API responses.
+    """
+    seeded_responses = {}
+
+    for filename, url in EXTERNAL_FILES.items():
+        cache_path = large_file_cache / filename
+
+        # Ensure file exists (download logic duplicated here to avoid scope issues)
+        if not cache_path.exists():
+            logger.info(f"Downloading {filename} from {url} for seeding...")
+            with httpx.stream("GET", url, follow_redirects=True) as response:
+                response.raise_for_status()
+                with open(cache_path, "wb") as f:
+                    for chunk in response.iter_bytes():
+                        f.write(chunk)
+
+        # Upload via API
+        with open(cache_path, "rb") as f:
+            files = {"files": (filename, f, "image/jpeg")}
+            response = await session_client.post("/files/upload", files=files)
+            if response.status_code == status.HTTP_201_CREATED:
+                seeded_responses[filename] = response.json()
+
+    return seeded_responses
+
+
 @pytest.fixture()
-def upload_image(client, shared_datadir):
+def upload_image(client, shared_datadir, seed_data, request):
     """
     Fixture (Factory function) that provides a function to upload an image and return its hash.
+    It uses cached data from seed_data if available to skip the actual upload.
     """
+    # Check for marker to set default behavior
+    marker = request.node.get_closest_marker("skip_seed")
+    default_skip_seed = marker is not None
 
     async def _uploader(
         image_name,
         return_full_response=False,
         return_response_data=False,
         return_attribute="pixel_hash",
+        skip_seed=default_skip_seed,
     ):
-        image_path = shared_datadir / image_name
-        image_mime = "image/jpeg"
+        # Check if we have this image pre-loaded
+        if not skip_seed and image_name in seed_data:
+            # Return a mock response with the pre-calculated data
+            response = MockResponse(seed_data[image_name])
+        else:
+            # Fallback to real upload for non-standard files
+            image_path = shared_datadir / image_name
+            image_mime = "image/jpeg"
 
-        # Upload the file
-        with open(image_path, "rb") as f:
-            files = {"files": (image_name, f, image_mime)}
-            response = await client.post("/files/upload", files=files)
+            with open(image_path, "rb") as f:
+                files = {"files": (image_name, f, image_mime)}
+                response = await client.post("/files/upload", files=files)
 
         if return_full_response:
             return response
@@ -210,37 +279,3 @@ def large_file_cache():
     cache_dir = Path(__file__).parent / ".cache"
     cache_dir.mkdir(exist_ok=True)
     return cache_dir
-
-
-@pytest.fixture()
-def ensure_large_files(shared_datadir, large_file_cache):
-    """
-    Fixture that ensures the requested files are present in shared_datadir.
-    It downloads them to the cache if necessary, then copies them to the test directory.
-    This prevents pytest-datadir from copying all files present
-    in tests/data to shared_datadir (temporary directory) during each test session.
-    """
-
-    def _ensure(filenames):
-        for filename in filenames:
-            if filename not in EXTERNAL_FILES:
-                continue
-
-            cache_path = large_file_cache / filename
-
-            # Download if not in cache
-            if not cache_path.exists():
-                url = EXTERNAL_FILES[filename]
-                logger.info(f"Downloading {filename} from {url}...")
-                with httpx.stream("GET", url, follow_redirects=True) as response:
-                    response.raise_for_status()
-                    with open(cache_path, "wb") as f:
-                        for chunk in response.iter_bytes():
-                            f.write(chunk)
-
-            # Copy from cache to temporary directory for test (shared_datadir)
-            dest_path = shared_datadir / filename
-            if not dest_path.exists():
-                shutil.copy(cache_path, dest_path)
-
-    return _ensure

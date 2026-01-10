@@ -77,6 +77,9 @@ asyncio_default_fixture_loop_scope = "function"
 env_files = [
     ".env.test"
 ]
+markers = [
+    "skip_seed: mark test to skip seeded data and force real upload",
+]
 log_cli = false
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"

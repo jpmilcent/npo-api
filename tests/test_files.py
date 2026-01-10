@@ -7,7 +7,7 @@ from fastapi import status
 from npo import config
 
 
-async def test_upload_file(client, shared_datadir):
+async def test_upload_file(shared_datadir, upload_image):
     """
     Test file upload via the /files/upload endpoint.
     Uses a real image file via pytest-datadir.
@@ -17,12 +17,9 @@ async def test_upload_file(client, shared_datadir):
     image_path = shared_datadir / image_name
     image_mime = "image/jpeg"
 
-    # Open file in binary mode for upload
-    with open(image_path, "rb") as f:
-        files = {"files": (image_name, f, image_mime)}
-        response = await client.post("/files/upload", files=files)
+    response = await upload_image(image_name, return_full_response=True)
 
-    # Verify that the upload succeeded (Code 200 OK or 201 Created depending on your implementation)
+    # Verify that the upload succeeded (Code 201 Created)
     assert response.status_code == status.HTTP_201_CREATED
     response_data = response.json()
 
@@ -162,7 +159,7 @@ async def test_upload_duplicate_file(client, shared_datadir, upload_image):
     response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
 
     # Second upload (duplicate)
-    response2 = await upload_image(image_name, return_full_response=True)
+    response2 = await upload_image(image_name, return_full_response=True, skip_seed=True)
 
     assert response2.status_code == status.HTTP_409_CONFLICT
     response_data2 = response2.json()
@@ -175,7 +172,7 @@ async def test_upload_duplicate_file(client, shared_datadir, upload_image):
     )
 
 
-async def test_upload_duplicate_perceptual_file(client, shared_datadir, upload_image):
+async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
     """
     Test file upload of a perceptual duplicate file via the /files/upload endpoint.
     Uses two similar image files via pytest-datadir.
@@ -292,9 +289,7 @@ async def test_get_image(client, shared_datadir, upload_image):
 
     uploaded_file_hash = await upload_image(image_name)
 
-    # Get image via the API
     response = await client.get(f"/files/{uploaded_file_hash}")
-    # Verify that the retrieve image succeeded (Code 200 OK)
     assert response.status_code == status.HTTP_200_OK
 
     # Open tile image file in binary mode to compare with web service response
@@ -316,25 +311,22 @@ async def test_get_image_not_found(verify_404):
     )
 
 
-async def test_mime_type_for_dng(upload_image, ensure_large_files):
+async def test_mime_type_for_dng(upload_image):
     dng = "image_03.dng"
-    ensure_large_files([dng])
     mime_type = await upload_image(dng, return_attribute="mime")
     assert mime_type == "image/x-adobe-dng"
 
 
-async def test_perceptual_hash_for_dng(upload_image, ensure_large_files):
+async def test_perceptual_hash_for_dng(upload_image):
     dng = "image_04.dng"
-    ensure_large_files([dng])
     perceptual_hash = await upload_image(dng, return_attribute="perceptual_hash")
     assert len(perceptual_hash) == 16
     assert perceptual_hash != "0000000000000000"
 
 
-async def test_distinct_pixel_hash_for_dng(upload_image, ensure_large_files):
+async def test_distinct_pixel_hash_for_dng(upload_image):
     dng1 = "image_03.dng"
     dng2 = "image_04.dng"
-    ensure_large_files([dng1, dng2])
 
     pixel_hash_1 = await upload_image(dng1)
     pixel_hash_2 = await upload_image(dng2)
@@ -342,10 +334,9 @@ async def test_distinct_pixel_hash_for_dng(upload_image, ensure_large_files):
     assert pixel_hash_1 != pixel_hash_2
 
 
-async def test_distinct_pixel_hash_for_raw(upload_image, ensure_large_files):
+async def test_distinct_pixel_hash_for_raw(upload_image):
     raw1 = "image_05.nef"
     raw2 = "image_06.nef"
-    ensure_large_files([raw1, raw2])
 
     pixel_hash_1 = await upload_image(raw1)
     pixel_hash_2 = await upload_image(raw2)
