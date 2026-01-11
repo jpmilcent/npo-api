@@ -1,4 +1,16 @@
 from enum import StrEnum
+from string import Formatter
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class ErrorArguments(BaseModel):
+    filename: str | None = Field(default=None, min_length=1)
+    perceptual_hash: str | None = Field(default=None, min_length=16)
+    pixel_hash: str | None = Field(default=None, min_length=32)
+    path: str | None = Field(default=None, min_length=1)
+
+    model_config = {"extra": "allow"}
 
 
 # Error Codes
@@ -31,5 +43,30 @@ class ErrorCode(StrEnum):
         member.message = message
         return member
 
-    def formatMsg(self, **kwargs) -> str:
-        return self.message.format(**kwargs)
+    def formatMsg(
+        self,
+        filename: str | None = None,
+        perceptual_hash: str | None = None,
+        pixel_hash: str | None = None,
+        path: str | None = None,
+        **kwargs,
+    ) -> str:
+        try:
+            params = ErrorArguments(
+                filename=filename,
+                perceptual_hash=perceptual_hash,
+                pixel_hash=pixel_hash,
+                path=path,
+                **kwargs,
+            )
+        except ValidationError as e:
+            raise ValueError(f"Invalid arguments for error {self.name}: {e}") from e
+
+        args = params.model_dump(exclude_none=True)
+        required_fields = [fname for _, fname, _, _ in Formatter().parse(self.message) if fname]
+        missing = [field for field in required_fields if not args.get(field)]
+        if missing:
+            raise ValueError(
+                f"Missing required arguments for error {self.name}: {', '.join(missing)}"
+            )
+        return self.message.format(**args)
