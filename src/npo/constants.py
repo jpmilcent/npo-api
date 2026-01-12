@@ -36,6 +36,10 @@ class ErrorCode(StrEnum):
         "METADATA_WEBSERVICE_NOT_FOUND",
         "Webservice /metadata/{path} requested not found.",
     )
+    SETTINGS_WEBSERVICE_NOT_FOUND = (
+        "SETTINGS_WEBSERVICE_NOT_FOUND",
+        "Webservice /settings/{path} requested not found.",
+    )
     SETTINGS_VERSION_NOT_FOUND = (
         "SETTINGS_VERSION_NOT_FOUND",
         (

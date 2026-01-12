@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from npo.main import app
 from tests.constants import (
     ERROR_SETTINGS_VERSION_NOT_FOUND,
+    ERROR_SETTINGS_WEBSERVICE_NOT_FOUND,
 )
 
 client = TestClient(app)
@@ -82,3 +83,13 @@ async def test_settings_version_not_found(client):
         "Check if the package is installed."
     )
 
+
+async def test_settings_catch_all(verify_404):
+    """Test the settings catch-all endpoint for 404 response."""
+
+    unknown_path = "some/random/path"
+    await verify_404(
+        f"/settings/{unknown_path}",
+        ERROR_SETTINGS_WEBSERVICE_NOT_FOUND,
+        f"Webservice /settings/{unknown_path} requested not found.",
+    )

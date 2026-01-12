@@ -72,3 +72,11 @@ async def version():
         "environment": os.getenv("NPO_ENVIRONMENT", "production"),
     }
 
+
+@settings_router.get("/{path:path}", include_in_schema=False)
+async def settings_catch_all(path: str):
+    raise APIException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        code=ErrorCode.SETTINGS_WEBSERVICE_NOT_FOUND,
+        message=ErrorCode.SETTINGS_WEBSERVICE_NOT_FOUND.formatMsg(path=path),
+    )
