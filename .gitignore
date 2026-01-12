@@ -27,3 +27,6 @@ build/
 dist/
 wheels/
 *.egg-info
+
+# API version file
+src/npo/version.py

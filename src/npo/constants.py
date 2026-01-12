@@ -36,6 +36,13 @@ class ErrorCode(StrEnum):
         "METADATA_WEBSERVICE_NOT_FOUND",
         "Webservice /metadata/{path} requested not found.",
     )
+    SETTINGS_VERSION_NOT_FOUND = (
+        "SETTINGS_VERSION_NOT_FOUND",
+        (
+            "The application version could not be determined for package '{package_name}'. "
+            "Check if the package is installed."
+        ),
+    )
 
     def __new__(cls, value, message):
         member = str.__new__(cls, value)
