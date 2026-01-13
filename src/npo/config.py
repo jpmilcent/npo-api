@@ -8,6 +8,7 @@ class CommonSettings(BaseSettings):
     """Common application settings."""
 
     app_name: str = "Nature Photo Organizer API"
+    environment: str = "production"
 
 
 class BackendSettings(CommonSettings):

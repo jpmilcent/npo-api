@@ -69,7 +69,7 @@ async def version():
         "version": app_version,
         "commit_sha": commit_sha,
         "commit_date": commit_date,
-        "environment": os.getenv("NPO_ENVIRONMENT", "production"),
+        "environment": config.settings.environment,
     }
 
 
