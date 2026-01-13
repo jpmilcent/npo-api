@@ -8,6 +8,19 @@ dynamic = ["version"]
 description = "REST API to manage HD image"
 readme = "README.md"
 requires-python = ">=3.13"
+license = { file = "LICENSE.md" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Multimedia :: Graphics",
+    "Typing :: Typed",
+]
 dependencies = [
   "aiosqlite>=0.22.0",
   "alembic>=1.17.2",
