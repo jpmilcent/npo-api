@@ -34,6 +34,7 @@ dev = [
     "pytest-dotenv>=0.5.2",
     "pytest-sugar>=1.0.0",
     "ruff>=0.14.10",
+    "setuptools-scm>=8.0",
 ]
 
 [tool.setuptools.package-dir]

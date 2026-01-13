@@ -98,3 +98,7 @@ To update the coverage report use: `uv run pytest --cov --cov-report=html`
 To view the report in your browser, open the _index.html_ file in the `htmlcov` directory.
 
 By default, pytest shows durations for the 5 longest tests. Use `uv run pytest --durations=0` to show all test durations.
+
+### Update version
+
+To force update of file `vesion.py` use: `uv run -m setuptools_scm`
