@@ -101,4 +101,4 @@ By default, pytest shows durations for the 5 longest tests. Use `uv run pytest -
 
 ### Update version
 
-To force update of file `vesion.py` use: `uv run -m setuptools_scm`
+To force update of file `version.py` use: `uv run -m setuptools_scm --force-write-version-files`
