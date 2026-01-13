@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.constants import ErrorCode
-from npo.core.file import get_file_by_pixel_hash
+from npo.crud.file import get_file_by_pixel_hash
 from npo.database import get_session
 from npo.routers.metadata.services import (
     _format_aperture,

@@ -5,7 +5,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.constants import ErrorCode
-from npo.core.file import get_file_by_pixel_hash, get_files_list
+from npo.crud.file import get_file_by_pixel_hash, get_files_list
 from npo.database import get_session
 from npo.routers.files.services import (
     build_file_infos,

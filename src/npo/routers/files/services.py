@@ -14,7 +14,7 @@ from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo import config
-from npo.core.file import (
+from npo.crud.file import (
     get_file_by_image_unique_id,
     get_file_by_perceptual_hash,
     get_file_by_pixel_hash,
