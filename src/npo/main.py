@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi_babel import BabelConfigs, BabelMiddleware
 
 from npo import config
 from npo.database import init_db
@@ -51,6 +52,17 @@ async def log_requests(request, call_next):
     response = await call_next(request)
     response.headers["X-Response-Time"] = f"{(time.time() - start_time) * 1000:.2f}ms"
     return response
+
+
+babel_configs = BabelConfigs(
+    ROOT_DIR=__file__,
+    BABEL_DEFAULT_LOCALE=config.settings.default_language,
+    BABEL_TRANSLATION_DIRECTORY="locales",
+)
+app.add_middleware(
+    BabelMiddleware,
+    babel_configs=babel_configs,
+)
 
 
 @app.get("/")

@@ -9,6 +9,7 @@ class CommonSettings(BaseSettings):
 
     app_name: str = "Nature Photo Organizer API"
     environment: str = "production"
+    default_language: str = "en"
 
 
 class BackendSettings(CommonSettings):

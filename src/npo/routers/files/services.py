@@ -10,6 +10,7 @@ import exiftool
 import magic
 import pyvips
 from fastapi import UploadFile, status
+from fastapi_babel import _
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -218,8 +219,9 @@ async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> N
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_PERCEPTUAL_HASH",
-            message=(
-                f"File {file.name} with perceptual hash {file.perceptual_hash} already exists."
+            message=_("File {file_name} with perceptual hash {hash} already exists.").format(
+                file_name=file.name,
+                hash=file.perceptual_hash,
             ),
         )
 
@@ -323,8 +325,11 @@ async def check_duplicates_by_image_unique_id(file: File, db: AsyncSession) -> N
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_IMAGE_UNIQUE_ID",
-            message=(
-                f"File {file.name} with image unique ID {file.image_unique_id} already exists."
+            message=_(
+                "File {file_name} with image unique ID {image_unique_id} already exists."
+            ).format(
+                file_name=file.name,
+                image_unique_id=file.image_unique_id,
             ),
         )
 

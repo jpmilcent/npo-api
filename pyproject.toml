@@ -26,6 +26,7 @@ dependencies = [
   "alembic>=1.17.2",
   "asyncpg>=0.31.0",
   "fastapi[standard]>=0.125.0",
+  "fastapi-babel>=0.0.8",
   "greenlet>=3.3.0",
   "psycopg[binary,pool]>=3.3.2",
   "pydantic-settings>=2.12.0",
