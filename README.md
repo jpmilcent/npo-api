@@ -1,7 +1,10 @@
 # nature-photo-organizer API
 
+⚠️ **This project is currently a sandbox**
 
 ## Development
+
+**Note**: Operational guidance for AI agents and contributor workflows is in [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
 We use:
 - [uv](https://docs.astral.sh/uv/) to manage the project
