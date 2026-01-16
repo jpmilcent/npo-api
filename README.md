@@ -102,3 +102,27 @@ By default, pytest shows durations for the 5 longest tests. Use `uv run pytest -
 ### Update version
 
 To force update of file `version.py` use: `uv run -m setuptools_scm --force-write-version-files`
+
+### Internationalization
+
+We use `pybabel` to manage translations.
+
+To extract messages from source code to the template file (`.pot`):
+```bash
+uv run pybabel extract -F babel.cfg -o src/npo/locales/messages.pot .
+```
+
+To update the catalog files (`.po`) from the template file (`.pot`):
+```bash
+uv run pybabel update -i src/npo/locales/messages.pot -d src/npo/locales
+```
+
+To compile catalog files (`.po`) to binary (`.mo`) files:
+```bash
+uv run pybabel compile -d src/npo/locales
+```
+
+To add a new language (e.g. es):
+```bash
+uv run pybabel init -i src/npo/locales/messages.pot -d src/npo/locales -l es
+```
