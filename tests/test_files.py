@@ -217,6 +217,37 @@ async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
     )
 
 
+async def test_upload_duplicate_file_fr(client, shared_datadir, upload_image):
+    """
+    Test file upload of a duplicate file via the /files/upload endpoint with French locale.
+    """
+    # shared_datadir points to the temporary folder containing a copy of tests/data
+    image_name = IMAGE_01_JPG
+    image_path = shared_datadir / image_name
+    image_mime = "image/jpeg"
+
+    # First upload
+    response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
+
+    # Second upload (duplicate) with Accept-Language: fr
+    with open(image_path, "rb") as f:
+        files = {"files": (image_name, f, image_mime)}
+        response2 = await client.post(
+            "/files/upload",
+            files=files,
+            headers={"Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"},
+        )
+
+    assert response2.status_code == status.HTTP_409_CONFLICT
+    response_data2 = response2.json()
+    assert "detail" in response_data2
+    error_detail = response_data2["detail"]
+    assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
+    assert error_detail["message"] == (
+        f"Fichier {image_name} avec hash perceptuel {response1_perceptual_hash} déjà existant."
+    )
+
+
 async def test_get_tile(client, shared_datadir, upload_image):
     """
     Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint.
