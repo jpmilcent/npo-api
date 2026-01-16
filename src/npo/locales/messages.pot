@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-15 00:27+0100\n"
+"POT-Creation-Date: 2026-01-16 11:05+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/npo/routers/files/services.py:222
+#: src/npo/files/services.py:222
 #, python-brace-format
 msgid "File {file_name} with perceptual hash {hash} already exists."
 msgstr ""
 
-#: src/npo/routers/files/services.py:329
+#: src/npo/files/services.py:329
 #, python-brace-format
 msgid "File {file_name} with image unique ID {image_unique_id} already exists."
 msgstr ""
