@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.database import get_session
-from npo.routers.health.schemas import HealthCheck, HealthPing
-from npo.routers.health.services import (
+from npo.core.database import get_session
+from npo.health.schemas import HealthCheck, HealthPing
+from npo.health.services import (
     check_database,
     check_storage_directory,
     check_upload_directory,

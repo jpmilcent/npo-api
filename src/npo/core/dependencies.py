@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sqlalchemy.engine import make_url
 
-from npo import config
+from npo.core import config
 
 
 @lru_cache

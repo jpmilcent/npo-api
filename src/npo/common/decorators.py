@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from npo.models.errors import ErrorDetail
 
@@ -18,14 +18,6 @@ COMMON_RESPONSES = {
 }
 
 VALID_HTTP_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
-
-
-class APIException(HTTPException):
-    def __init__(self, status_code: int, code: str, message: str):
-        super().__init__(
-            status_code=status_code,
-            detail=ErrorDetail(code=code, message=message).model_dump(),
-        )
 
 
 def create_route_decorator(router: APIRouter):

@@ -4,7 +4,7 @@ import exiftool
 import pyvips
 from fastapi import status
 
-from npo import config
+from npo.core import config
 from tests.constants import (
     ERROR_DUPLICATE_PERCEPTUAL_HASH,
     ERROR_FILE_NOT_FOUND,

@@ -1,6 +1,6 @@
 import pytest
 
-from npo.constants import ErrorCode
+from npo.core.constants import ErrorCode
 
 
 def test_format_msg_success():

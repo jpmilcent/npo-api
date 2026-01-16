@@ -5,11 +5,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from npo import config
-from npo.constants import ErrorCode
-from npo.dependencies import get_frontend_settings
-from npo.routers.settings.schema import Version
-from npo.routers.utils import APIException
+from npo.core import config
+from npo.core.constants import ErrorCode
+from npo.core.dependencies import get_frontend_settings
+from npo.core.exceptions import APIException
+from npo.settings.schema import Version
 
 settings_router = APIRouter(
     prefix="/settings",

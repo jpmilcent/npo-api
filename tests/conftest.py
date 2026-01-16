@@ -11,8 +11,8 @@ from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from npo import config
-from npo.database import Base, get_session
+from npo.core import config
+from npo.core.database import Base, get_session
 from npo.main import app
 from tests.constants import EXTERNAL_FILES
 

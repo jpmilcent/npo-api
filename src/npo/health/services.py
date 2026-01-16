@@ -5,8 +5,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo import config
-from npo.database import get_session
+from npo.core import config
+from npo.core.database import get_session
 
 
 async def check_database(session: AsyncSession = Depends(get_session)):

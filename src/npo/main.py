@@ -8,17 +8,17 @@ from fastapi import Depends, FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi_babel import BabelConfigs, BabelMiddleware
 
-from npo import config
-from npo.database import init_db
-from npo.dependencies import (
+from npo.core import config
+from npo.core.database import init_db
+from npo.core.dependencies import (
     make_db_directory,
     make_storage_directory,
     make_upload_directory,
 )
-from npo.routers.files.routes import files_router
-from npo.routers.health.routes import health_router
-from npo.routers.metadata.routes import metadata_router
-from npo.routers.settings.routes import settings_router
+from npo.files.routes import files_router
+from npo.health.routes import health_router
+from npo.metadata.routes import metadata_router
+from npo.settings.routes import settings_router
 
 logger = logging.getLogger(config.settings.logger_name)
 

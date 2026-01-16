@@ -3,10 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.constants import ErrorCode
-from npo.crud.file import get_file_by_pixel_hash
-from npo.database import get_session
-from npo.routers.metadata.services import (
+from npo.common.decorators import create_route_decorator
+from npo.core.constants import ErrorCode
+from npo.core.database import get_session
+from npo.core.exceptions import APIException
+from npo.files.crud import get_file_by_pixel_hash
+from npo.metadata.services import (
     _format_aperture,
     _format_color_space,
     _format_exposure_compensation,
@@ -22,7 +24,6 @@ from npo.routers.metadata.services import (
     _format_shutter_speed,
     _format_white_balance,
 )
-from npo.routers.utils import APIException, create_route_decorator
 
 RAW_METADATA_NOT_FOUND_RESPONSE = {
     "description": "Raw metadata not found",

@@ -15,7 +15,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import functions as func
 
-from npo import config
+from npo.core import config
 
 db_uri = config.settings.database_uri
 

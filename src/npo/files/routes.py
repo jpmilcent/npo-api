@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.constants import ErrorCode
-from npo.crud.file import get_file_by_pixel_hash, get_files_list
-from npo.database import get_session
-from npo.routers.files.services import (
+from npo.common.decorators import create_route_decorator
+from npo.core.constants import ErrorCode
+from npo.core.database import get_session
+from npo.core.exceptions import APIException
+from npo.files.crud import get_file_by_pixel_hash, get_files_list
+from npo.files.services import (
     build_file_infos,
     check_duplicates_by_image_unique_id,
     check_duplicates_by_perceptual_hash,
@@ -24,7 +26,6 @@ from npo.routers.files.services import (
     save_file,
     store_file_infos,
 )
-from npo.routers.utils import APIException, create_route_decorator
 
 FILE_NOT_FOUND_RESPONSE = {
     "description": "File not found",
