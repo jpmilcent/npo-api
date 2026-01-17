@@ -1,3 +1,15 @@
+class ExifFlash:
+    """Constants for decoding EXIF Flash tag."""
+
+    FIRED_MASK = 1
+    MODE_SHIFT = 3
+    MODE_MASK = 0b11
+    MODE_COMPULSORY = 1
+    MODE_SUPPRESSED = 2
+    MODE_AUTO = 3
+    RED_EYE_SHIFT = 6
+
+
 def _format_focal_length(value: float | str | None) -> str | None:
     if value is None:
         return None
@@ -39,17 +51,17 @@ def _format_flash(value: float | str | int | None) -> str | None:
             return "No Flash"
 
         parts = []
-        parts.append("Flash fired" if val & 1 else "Flash did not fire")
+        parts.append("Flash fired" if val & ExifFlash.FIRED_MASK else "Flash did not fire")
 
-        mode = (val >> 3) & 0b11
-        if mode == 3:
+        mode = (val >> ExifFlash.MODE_SHIFT) & ExifFlash.MODE_MASK
+        if mode == ExifFlash.MODE_AUTO:
             parts.append("auto")
-        elif mode == 1:
+        elif mode == ExifFlash.MODE_COMPULSORY:
             parts.append("compulsory")
-        elif mode == 2:
+        elif mode == ExifFlash.MODE_SUPPRESSED:
             parts.append("suppressed")
 
-        if (val >> 6) & 1:
+        if (val >> ExifFlash.RED_EYE_SHIFT) & 1:
             parts.append("red-eye reduction")
 
         return ", ".join(parts)
