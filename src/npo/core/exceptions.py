@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from npo.models.errors import ErrorDetail
+from npo.core.schemas import ErrorDetail
 
 
 class APIException(HTTPException):

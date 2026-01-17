@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from npo.models.errors import ErrorDetail
+from npo.core.schemas import ErrorDetail
 
 COMMON_RESPONSES = {
     status.HTTP_400_BAD_REQUEST: {
