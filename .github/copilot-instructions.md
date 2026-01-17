@@ -5,12 +5,12 @@
 - **Why:** Provide a resilient image store with duplicate detection (perceptual/pixel hashes), metadata extraction and tile-serving for high-resolution zooming.
 
 ## Key components & where to look 🔎
-- App entry: [`src/npo/main.py`](/src/npo/main.py) – sets up FastAPI, middleware, lifespan that runs migrations via `init_db()`.
-- Configuration: [`src/npo/core/config.py`](/src/npo/core/config.py) – settings via `.env` (`npo_` prefix); split into backend/frontend settings.
-- Image logic: [`src/npo/files/services.py`](/src/npo/files/services.py) – hashing, EXIF extraction, DZI creation, file movement.
+- App entry: [`src/npo/main.py`](../src/npo/main.py) – sets up FastAPI, middleware, lifespan that runs migrations via `init_db()`.
+- Configuration: [`src/npo/core/config.py`](../src/npo/core/config.py) – settings via `.env` (`npo_` prefix); split into backend/frontend settings.
+- Image logic: [`src/npo/files/services.py`](../src/npo/files/services.py) – hashing, EXIF extraction, DZI creation, file movement.
 - API routes: `src/npo/files/routes.py` – upload, full image, metadata, tile endpoints; other routers: `src/npo/settings/routes.py`, `src/npo/health/routes.py`.
-- DB layer: [`src/npo/core/database.py`](/src/npo/core/database.py) – async SQLAlchemy setup; `init_db()` runs Alembic migrations. File models: [`src/npo/files/models.py`](/src/npo/files/models.py).
-- Tests & fixtures: [`tests/conftest.py`](/tests/conftest.py) – client fixtures, `TEST_DATABASE_URL`, `USE_ALEMBIC_MIGRATIONS`, `seed_data`, temp dirs.
+- DB layer: [`src/npo/core/database.py`](../src/npo/core/database.py) – async SQLAlchemy setup; `init_db()` runs Alembic migrations. File models: [`src/npo/files/models.py`](../src/npo/files/models.py).
+- Tests & fixtures: [`tests/conftest.py`](../tests/conftest.py) – client fixtures, `TEST_DATABASE_URL`, `USE_ALEMBIC_MIGRATIONS`, `seed_data`, temp dirs.
 
 ## Important conventions & patterns ⚙️
 - Hash-based storage: Pixel hash is broken into directory chunks using `NPO_HASH_DIR_STEP` and `NPO_HASH_DIR_PARTS_COUNT` from `config.settings`. See `compute_hash_pathes()` in `services.py` for exact behavior.

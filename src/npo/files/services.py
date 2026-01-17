@@ -114,7 +114,10 @@ async def compute_pixel_hash(file: File) -> None:
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_DECODING_ERROR",
-            message=f"Unable to decode image file {file.name}. The file might be corrupted or unsupported.",
+            message=(
+                f"Unable to decode image file {file.name}. "
+                "The file might be corrupted or unsupported."
+            ),
         ) from e
 
 
