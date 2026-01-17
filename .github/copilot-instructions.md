@@ -8,7 +8,7 @@
 - App entry: [`src/npo/main.py`](/src/npo/main.py) – sets up FastAPI, middleware, lifespan that runs migrations via `init_db()`.
 - Configuration: [`src/npo/core/config.py`](/src/npo/core/config.py) – settings via `.env` (`npo_` prefix); split into backend/frontend settings.
 - Image logic: [`src/npo/files/services.py`](/src/npo/files/services.py) – hashing, EXIF extraction, DZI creation, file movement.
-- API routes: [`src/npo/files/routes.py`](/src/npo/files/routes.py) – upload, full image, tile endpoints; other routers: [`src/npo/metadata/routes.py`](/src/npo/metadata/routes.py), [`src/npo/settings/routes.py`](/src/npo/settings/routes.py).
+- API routes: `src/npo/files/routes.py` – upload, full image, metadata, tile endpoints; other routers: `src/npo/settings/routes.py`, `src/npo/health/routes.py`.
 - DB layer: [`src/npo/core/database.py`](/src/npo/core/database.py) – async SQLAlchemy setup; `init_db()` runs Alembic migrations. File models: [`src/npo/files/models.py`](/src/npo/files/models.py).
 - Tests & fixtures: [`tests/conftest.py`](/tests/conftest.py) – client fixtures, `TEST_DATABASE_URL`, `USE_ALEMBIC_MIGRATIONS`, `seed_data`, temp dirs.
 

@@ -9,6 +9,22 @@ from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
 from npo.files.crud import get_file_by_pixel_hash, get_files_list
+from npo.files.metadata import (
+    _format_aperture,
+    _format_color_space,
+    _format_exposure_compensation,
+    _format_exposure_mode,
+    _format_exposure_program,
+    _format_flash,
+    _format_focal_length,
+    _format_metering_mode,
+    _format_orientation,
+    _format_pixels,
+    _format_scene_capture_type,
+    _format_scene_type,
+    _format_shutter_speed,
+    _format_white_balance,
+)
 from npo.files.schemas import PhotographyMetadata
 from npo.files.services import (
     build_file_infos,
@@ -26,22 +42,6 @@ from npo.files.services import (
     move_file,
     save_file,
     store_file_infos,
-)
-from npo.metadata.services import (
-    _format_aperture,
-    _format_color_space,
-    _format_exposure_compensation,
-    _format_exposure_mode,
-    _format_exposure_program,
-    _format_flash,
-    _format_focal_length,
-    _format_metering_mode,
-    _format_orientation,
-    _format_pixels,
-    _format_scene_capture_type,
-    _format_scene_type,
-    _format_shutter_speed,
-    _format_white_balance,
 )
 
 FILE_NOT_FOUND_RESPONSE = {
