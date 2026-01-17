@@ -17,7 +17,6 @@ from npo.core.dependencies import (
 )
 from npo.files.routes import files_router
 from npo.health.routes import health_router
-from npo.metadata.routes import metadata_router
 from npo.settings.routes import settings_router
 
 logger = logging.getLogger(config.settings.logger_name)
@@ -43,7 +42,6 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(settings_router)
 app.include_router(files_router)
-app.include_router(metadata_router)
 
 
 @app.middleware("http")

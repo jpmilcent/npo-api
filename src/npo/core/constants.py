@@ -32,10 +32,6 @@ class ErrorCode(StrEnum):
         "PHOTOGRAPHY_METADATA_NOT_FOUND",
         "Photography metadata for file {pixel_hash} not found.",
     )
-    METADATA_WEBSERVICE_NOT_FOUND = (
-        "METADATA_WEBSERVICE_NOT_FOUND",
-        "Webservice /metadata/{path} requested not found.",
-    )
     SETTINGS_WEBSERVICE_NOT_FOUND = (
         "SETTINGS_WEBSERVICE_NOT_FOUND",
         "Webservice /settings/{path} requested not found.",
