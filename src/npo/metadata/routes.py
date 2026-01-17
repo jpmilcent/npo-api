@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.common.decorators import create_route_decorator
+from npo.common.decorators import NpoApiRoute
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
@@ -43,7 +43,7 @@ metadata_router = APIRouter(
 )
 
 
-metadata_route = create_route_decorator(metadata_router)
+metadata_route = NpoApiRoute(metadata_router)
 
 
 @metadata_route(

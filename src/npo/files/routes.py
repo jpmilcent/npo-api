@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.common.decorators import create_route_decorator
+from npo.common.decorators import NpoApiRoute
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
@@ -37,7 +37,7 @@ files_router = APIRouter(
     prefix="/files",
     tags=["files"],
 )
-files_route = create_route_decorator(files_router)
+files_route = NpoApiRoute(files_router)
 
 
 @files_router.get(

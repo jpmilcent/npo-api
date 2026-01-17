@@ -2,34 +2,44 @@ from fastapi import APIRouter, status
 
 from npo.core.schemas import ErrorDetail
 
-COMMON_RESPONSES = {
-    status.HTTP_400_BAD_REQUEST: {
-        "model": ErrorDetail,
-        "description": "Bad Request",
-    },
-    status.HTTP_404_NOT_FOUND: {
-        "model": ErrorDetail,
-        "description": "Resource not found",
-    },
-    status.HTTP_500_INTERNAL_SERVER_ERROR: {
-        "model": ErrorDetail,
-        "description": "Internal Server Error",
-    },
-}
 
-VALID_HTTP_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
+class NpoApiRoute:
+    COMMON_RESPONSES = {
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorDetail,
+            "description": "Bad Request",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorDetail,
+            "description": "Resource not found",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorDetail,
+            "description": "Internal Server Error",
+        },
+    }
 
+    VALID_HTTP_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
-def create_route_decorator(router: APIRouter):
-    def route_decorator(
-        path: str, method: str = "GET", responses: dict = None, override_404: dict = None, **kwargs
+    def __init__(self, router: APIRouter):
+        self.router = router
+
+    def __call__(
+        self,
+        path: str,
+        method: str = "GET",
+        responses: dict = None,
+        override_404: dict = None,
+        **kwargs,
     ):
-        if method.upper() not in VALID_HTTP_METHODS:
-            raise ValueError(f"Invalid HTTP method: {method}. Must be one of {VALID_HTTP_METHODS}")
+        if method.upper() not in self.VALID_HTTP_METHODS:
+            raise ValueError(
+                f"Invalid HTTP method: {method}. Must be one of {self.VALID_HTTP_METHODS}"
+            )
         if responses is None:
-            responses = COMMON_RESPONSES.copy()
+            responses = self.COMMON_RESPONSES.copy()
         else:
-            responses.update(COMMON_RESPONSES.copy())
+            responses.update(self.COMMON_RESPONSES.copy())
         if override_404:
             overrides = {
                 status.HTTP_404_NOT_FOUND: {
@@ -46,7 +56,5 @@ def create_route_decorator(router: APIRouter):
                 }
             }
             responses.update(overrides)
-        route_method = getattr(router, method.lower())
+        route_method = getattr(self.router, method.lower())
         return route_method(path, responses=responses, **kwargs)
-
-    return route_decorator

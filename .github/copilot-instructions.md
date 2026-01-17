@@ -18,7 +18,7 @@
 - File model: `src/npo/files/models.py` — fields include `file_hash` (md5), `perceptual_hash`, `pixel_hash`, `meta_data` (JSON), location fields (`path_hash_dir`, `path_hash_file`). DB table names are `classname.lower() + 's'` (see `Base.__tablename__`).
 - DZI tiles: generated with pyvips and saved as `.szi` (ZIP container). Tiles read from ZIP (`get_tile_from_dzi`).
 - Error handling: use `APIException` with `ErrorCode` constants (`npo/constants.py`) to ensure consistent `code` and `message` structure in responses. Prefer `ErrorCode.X.formatMsg(...)` to populate messages and validate required fields.
-- Routes: prefer the `create_route_decorator()` helper (in `src/npo/common/decorators.py`) to get standard `responses` and override examples.
+- Routes: prefer the `NpoApiRoute()` helper (in `src/npo/common/decorators.py`) to get standard `responses` and override examples.
 - i18n: messages use `fastapi_babel`/`BabelMiddleware`; localized strings use `_()`.
 
 ## Developer workflows & commands 🧰
@@ -34,7 +34,7 @@
   - Large test assets are cached in `tests/.cache` and seeded via `seed_data` fixture; a `skip_seed` marker is supported.
 
 ## Quick examples to reference (copy/paste) ✂️
-- Upload endpoint (single or multipart): POST `/files/upload` ➜ handled in `src/npo/routers/files/routes.py` (look for `files_route` and `create_route_decorator`).
+- Upload endpoint (single or multipart): POST `/files/upload` ➜ handled in `src/npo/routers/files/routes.py` (look for `files_route` and `NpoApiRoute`).
 - Tile retrieval: GET `/{pixel_hash}/{zoom}/{x}/{y}.jpg` ➜ handled in `src/npo/routers/files/routes.py` and served from `.szi` (ZIP DZI) via `get_tile_from_dzi` in `src/npo/files/services.py`.
 - Hash lookups: CRUD helpers use `ilike(f"{hash}%")` prefix matching — see `get_file_by_pixel_hash` and `get_file_by_perceptual_hash` in `src/npo/files/crud.py`.
 - Raise a consistent API error (use `ErrorCode` enum and `APIException`):
@@ -64,7 +64,7 @@ raise APIException(status_code=404, code=ErrorCode.FILE_NOT_FOUND, message=Error
 - Testing utilities: HTTPX `AsyncClient` with `ASGITransport` and dependency overrides for `get_session`; large test assets live in `tests/.cache` and are seeded by the `seed_data` fixture.
 
 ## PR checklist & quick rules ✅
-- Use `create_route_decorator()` for new routers to keep consistent OpenAPI `responses` and examples.
+- Use `NpoApiRoute()` for new routers to keep consistent OpenAPI `responses` and examples.
 - Use `ErrorCode` enums and `APIException` for API errors (ensure `formatMsg` variables are provided).
 - When adding image processing or new binaries (e.g., exiftool-like tools) document install steps and add CI changes — these are non-trivial for reproducible pipeline builds.
 - Add tests for: hash computation, duplicate detection (`check_duplicates_by_perceptual_hash`), tile serving (`get_tile_from_dzi`), and route behaviors.
