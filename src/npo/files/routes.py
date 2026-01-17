@@ -9,6 +9,7 @@ from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
 from npo.files.crud import get_file_by_pixel_hash, get_files_list
+from npo.files.schemas import PhotographyMetadata
 from npo.files.services import (
     build_file_infos,
     check_duplicates_by_image_unique_id,
@@ -188,6 +189,7 @@ async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(
     "/{pixel_hash}/metadata/photography",
     summary="Selected photography metadata by pixel hash",
     override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
+    response_model=PhotographyMetadata,
 )
 async def get_photography_metadata(
     pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]

@@ -27,3 +27,28 @@ class File(BaseModel):
     file_hash: str = ""
 
     meta_data: dict | None = None
+
+
+class PhotographyMetadata(BaseModel):
+    """Schema for formatted photography metadata."""
+
+    cameraMaker: str | None = None
+    cameraModel: str | None = None
+    lensModel: str | None = None
+    focalLength: str | None = None
+    focalLengthIn35mmFormat: str | None = None
+    aperture: str | None = None
+    shutterSpeed: str | None = None
+    iso: int | str | None = None
+    flash: str | None = None
+    imageWidth: str | None = None
+    imageHeight: str | None = None
+    orientation: str | None = None
+    whiteBalance: str | None = None
+    exposureProgram: str | None = None
+    exposureMode: str | None = None
+    exposureCompensation: str | None = None
+    meteringMode: str | None = None
+    sceneCaptureType: str | None = None
+    sceneType: str | None = None
+    colorSpace: str | None = None
