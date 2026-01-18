@@ -1,4 +1,6 @@
+import logging
 import os
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy import text
@@ -8,13 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from npo.core import config
 from npo.core.database import get_session
 
+logger = logging.getLogger(__name__)
 
-async def check_database(session: AsyncSession = Depends(get_session)):
+
+async def check_database(session: Annotated[AsyncSession, Depends(get_session)]):
     try:
         await session.execute(text("SELECT 1"))
         return True
     except SQLAlchemyError as e:
-        print(e)
+        logger.error(e)
         return False
 
 

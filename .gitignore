@@ -28,5 +28,8 @@ dist/
 wheels/
 *.egg-info
 
+# API default logs directory
+logs/
+
 # API version file
 src/npo/version.py
