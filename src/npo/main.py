@@ -15,9 +15,9 @@ from npo.core.dependencies import (
     make_storage_directory,
     make_upload_directory,
 )
-from npo.files.routes import files_router
-from npo.health.routes import health_router
-from npo.settings.routes import settings_router
+from npo.modules.files.routes import files_router
+from npo.modules.health.routes import health_router
+from npo.modules.settings.routes import settings_router
 
 logger = logging.getLogger(config.settings.logger_name)
 

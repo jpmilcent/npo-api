@@ -9,11 +9,11 @@ from npo.core import config
 from npo.core.constants import ErrorCode
 from npo.core.dependencies import get_frontend_settings
 from npo.core.exceptions import APIException
-from npo.settings.schema import Version
+from npo.modules.settings.schema import Version
 
 settings_router = APIRouter(
     prefix="/settings",
-    tags=["settings"],
+    tags=["Settings"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -30,7 +30,6 @@ async def info(settings: Annotated[config.FrontendSettings, Depends(get_frontend
     "/version",
     summary="App version",
     response_model=Version,
-    tags=["Settings"],
 )
 async def version():
     package_name = "npo"

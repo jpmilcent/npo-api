@@ -1,7 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from npo.files.models import File as FileStorage
+from npo.modules.files.models import File as FileStorage
 
 
 async def get_file_by_file_hash(file_hash: str, db: AsyncSession) -> FileStorage | None:

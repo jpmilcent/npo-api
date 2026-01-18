@@ -16,13 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core import config
 from npo.core.exceptions import APIException
-from npo.files.crud import (
+from npo.modules.files.crud import (
     get_file_by_image_unique_id,
     get_file_by_perceptual_hash,
     get_file_by_pixel_hash,
 )
-from npo.files.models import File as FileStorage
-from npo.files.schemas import File
+from npo.modules.files.models import File as FileStorage
+from npo.modules.files.schemas import File
 
 logger = logging.getLogger(__name__)
 

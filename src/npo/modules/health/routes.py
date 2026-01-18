@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core.database import get_session
-from npo.health.schemas import HealthCheck, HealthPing
-from npo.health.services import (
+from npo.modules.health.schemas import HealthCheck, HealthPing
+from npo.modules.health.services import (
     check_database,
     check_storage_directory,
     check_upload_directory,
@@ -13,7 +13,7 @@ from npo.health.services import (
 
 health_router = APIRouter(
     prefix="/health",
-    tags=["health"],
+    tags=["Health"],
     responses={404: {"description": "Not found"}},
 )
 
