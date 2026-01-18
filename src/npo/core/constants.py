@@ -17,12 +17,12 @@ class ErrorArguments(BaseModel):
 class ErrorCode(StrEnum):
     DUPLICATE_PERCEPTUAL_HASH = (
         "DUPLICATE_PERCEPTUAL_HASH",
-        "File {filename} with perceptual hash {perceptual_hash} already exists.",
+        "Image {filename} with perceptual hash {perceptual_hash} already exists.",
     )
-    FILE_NOT_FOUND = "FILE_NOT_FOUND", "File {pixel_hash} not found."
-    FILES_WEBSERVICE_NOT_FOUND = (
-        "FILES_WEBSERVICE_NOT_FOUND",
-        "Webservice /files/{path} requested not found.",
+    IMAGE_NOT_FOUND = "IMAGE_NOT_FOUND", "Image {pixel_hash} not found."
+    IMAGES_WEBSERVICE_NOT_FOUND = (
+        "IMAGES_WEBSERVICE_NOT_FOUND",
+        "Webservice /images/{path} requested not found.",
     )
     RAW_METADATA_NOT_FOUND = (
         "RAW_METADATA_NOT_FOUND",

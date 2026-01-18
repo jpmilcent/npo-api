@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from npo.core.database import Base
 
 
-class File(Base):
+class Image(Base):
     name: Mapped[str]
     path: Mapped[str] = mapped_column(String(250), unique=True)
     path_hash_dir: Mapped[str] = mapped_column(String(75), default="")

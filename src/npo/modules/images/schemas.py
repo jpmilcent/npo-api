@@ -3,8 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class File(BaseModel):
-    """File data model."""
+class Image(BaseModel):
+    """Image data model."""
 
     name: str
     path: str

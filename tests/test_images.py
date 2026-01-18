@@ -7,7 +7,7 @@ from fastapi import status
 from npo.core import config
 from tests.constants import (
     ERROR_DUPLICATE_PERCEPTUAL_HASH,
-    ERROR_FILE_NOT_FOUND,
+    ERROR_IMAGE_NOT_FOUND,
     IMAGE_01_JPG,
     IMAGE_02_JPG,
     IMAGE_03_DNG,
@@ -18,9 +18,9 @@ from tests.constants import (
 )
 
 
-async def test_upload_file(shared_datadir, upload_image):
+async def test_upload_image(shared_datadir, upload_image):
     """
-    Test file upload via the /files/upload endpoint.
+    Test image upload via the /images/upload endpoint.
     Uses a real image file via pytest-datadir.
     """
     # shared_datadir points to the temporary folder containing a copy of tests/data
@@ -157,9 +157,9 @@ def _verify_metadata_longitude(local_metatadata, response_image_data):
         assert response_image_data["longitude"] == expected_longitude
 
 
-async def test_upload_duplicate_file(client, shared_datadir, upload_image):
+async def test_upload_duplicate_image(client, shared_datadir, upload_image):
     """
-    Test file upload of a duplicate file via the /files/upload endpoint.
+    Test image upload of a duplicate image file via the /images/upload endpoint.
     Uses a real image file via pytest-datadir.
     The second upload of the same file should be detected as a duplicate.
     """
@@ -179,13 +179,13 @@ async def test_upload_duplicate_file(client, shared_datadir, upload_image):
     assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
     assert (
         error_detail["message"]
-        == f"File {image_name} with perceptual hash {response1_perceptual_hash} already exists."
+        == f"Image {image_name} with perceptual hash {response1_perceptual_hash} already exists."
     )
 
 
-async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
+async def test_upload_duplicate_perceptual_image(shared_datadir, upload_image):
     """
-    Test file upload of a perceptual duplicate file via the /files/upload endpoint.
+    Test image file upload of a perceptual duplicate file via the /images/upload endpoint.
     Uses two similar image files via pytest-datadir.
     The second upload of a perceptually similar file should be detected as a duplicate.
     """
@@ -212,14 +212,14 @@ async def test_upload_duplicate_perceptual_file(shared_datadir, upload_image):
     error_detail = response_data2["detail"]
     assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
     assert (
-        error_detail["message"] == f"File {modified_image_name} with perceptual hash "
+        error_detail["message"] == f"Image {modified_image_name} with perceptual hash "
         f"{response1_perceptual_hash} already exists."
     )
 
 
-async def test_upload_duplicate_file_fr(client, shared_datadir, upload_image):
+async def test_upload_duplicate_image_fr(client, shared_datadir, upload_image):
     """
-    Test file upload of a duplicate file via the /files/upload endpoint with French locale.
+    Test file upload of a duplicate file via the /images/upload endpoint with French locale.
     """
     # shared_datadir points to the temporary folder containing a copy of tests/data
     image_name = IMAGE_01_JPG
@@ -233,7 +233,7 @@ async def test_upload_duplicate_file_fr(client, shared_datadir, upload_image):
     with open(image_path, "rb") as f:
         files = {"files": (image_name, f, image_mime)}
         response2 = await client.post(
-            "/files/upload",
+            "/images/upload",
             files=files,
             headers={"Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"},
         )
@@ -244,13 +244,13 @@ async def test_upload_duplicate_file_fr(client, shared_datadir, upload_image):
     error_detail = response_data2["detail"]
     assert error_detail["code"] == ERROR_DUPLICATE_PERCEPTUAL_HASH
     assert error_detail["message"] == (
-        f"Fichier {image_name} avec hash perceptuel {response1_perceptual_hash} déjà existant."
+        f"Image {image_name} avec hash perceptuel {response1_perceptual_hash} déjà existant."
     )
 
 
 async def test_get_tile(client, shared_datadir, upload_image):
     """
-    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint.
+    Test tile image retrieve via the /images/{file_hash}/{zoom}/{x}/{y}.jpg endpoint.
     Compare with a real tile image file via pytest-datadir.
     """
 
@@ -262,7 +262,7 @@ async def test_get_tile(client, shared_datadir, upload_image):
     uploaded_file_hash = await upload_image(image_name)
 
     # Get a tile image via the API
-    response = await client.get(f"/files/{uploaded_file_hash}/2/0/1.jpg")
+    response = await client.get(f"/images/{uploaded_file_hash}/2/0/1.jpg")
 
     # Verify that the retrieve tile image succeeded (Code 200 OK)
     assert response.status_code == status.HTTP_200_OK
@@ -277,7 +277,7 @@ async def test_get_tile(client, shared_datadir, upload_image):
 
 async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
     """
-    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint
+    Test tile image retrieve via the /images/{file_hash}/{zoom}/{x}/{y}.jpg endpoint
     for an image with EXIF orientation distinct from 1.
     Compare with a real tile image file via pytest-datadir.
     """
@@ -290,7 +290,7 @@ async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
     uploaded_file_hash = await upload_image(image_name)
 
     # Get a tile image via the API
-    response = await client.get(f"/files/{uploaded_file_hash}/3/1/1.jpg")
+    response = await client.get(f"/images/{uploaded_file_hash}/3/1/1.jpg")
 
     # Verify that the retrieve tile image succeeded (Code 200 OK)
     assert response.status_code == status.HTTP_200_OK
@@ -305,7 +305,7 @@ async def test_get_tile_for_orientation(client, shared_datadir, upload_image):
 
 async def test_get_tile_not_found(verify_404):
     """
-    Test tile image retrieve via the /files/{file_hash}/{zoom}/{x}/{y}.jpg endpoint
+    Test tile image retrieve via the /images/{file_hash}/{zoom}/{x}/{y}.jpg endpoint
     for 404 response.
     """
 
@@ -315,15 +315,15 @@ async def test_get_tile_not_found(verify_404):
     y = 1
 
     await verify_404(
-        f"/files/{pixel_hash}/{zoom}/{x}/{y}.jpg",
-        ERROR_FILE_NOT_FOUND,
-        f"File {pixel_hash} not found.",
+        f"/images/{pixel_hash}/{zoom}/{x}/{y}.jpg",
+        ERROR_IMAGE_NOT_FOUND,
+        f"Image {pixel_hash} not found.",
     )
 
 
 async def test_get_image(client, shared_datadir, upload_image):
     """
-    Test image retrieve via the /files/{file_hash} endpoint.
+    Test image retrieve via the /images/{file_hash} endpoint.
     Compare with a real image file via pytest-datadir.
     """
 
@@ -332,7 +332,7 @@ async def test_get_image(client, shared_datadir, upload_image):
 
     uploaded_file_hash = await upload_image(image_name)
 
-    response = await client.get(f"/files/{uploaded_file_hash}")
+    response = await client.get(f"/images/{uploaded_file_hash}")
     assert response.status_code == status.HTTP_200_OK
 
     # Open tile image file in binary mode to compare with web service response
@@ -342,15 +342,15 @@ async def test_get_image(client, shared_datadir, upload_image):
 
 async def test_get_image_not_found(verify_404):
     """
-    Test image retrieve via the /files/{file_hash} endpoint for 404 response.
+    Test image retrieve via the /images/{file_hash} endpoint for 404 response.
     """
 
     pixel_hash = "abcdef1234567890abcdef1234567890"
 
     await verify_404(
-        f"/files/{pixel_hash}",
-        ERROR_FILE_NOT_FOUND,
-        f"File {pixel_hash} not found.",
+        f"/images/{pixel_hash}",
+        ERROR_IMAGE_NOT_FOUND,
+        f"Image {pixel_hash} not found.",
     )
 
 

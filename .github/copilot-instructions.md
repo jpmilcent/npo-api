@@ -7,15 +7,15 @@
 ## Key components & where to look 🔎
 - App entry: [`src/npo/main.py`](../src/npo/main.py) – sets up FastAPI, middleware, lifespan that runs migrations via `init_db()`.
 - Configuration: [`src/npo/core/config.py`](../src/npo/core/config.py) – settings via `.env` (`npo_` prefix); split into backend/frontend settings.
-- Image logic: [`src/npo/files/services.py`](../src/npo/files/services.py) – hashing, EXIF extraction, DZI creation, file movement.
-- API routes: `src/npo/files/routes.py` – upload, full image, metadata, tile endpoints; other routers: `src/npo/settings/routes.py`, `src/npo/health/routes.py`.
-- DB layer: [`src/npo/core/database.py`](../src/npo/core/database.py) – async SQLAlchemy setup; `init_db()` runs Alembic migrations. File models: [`src/npo/files/models.py`](../src/npo/files/models.py).
+- Image logic: [`src/npo/images/services.py`](../src/npo/modules/images/services.py) – hashing, EXIF extraction, DZI creation, file movement.
+- API routes: `src/npo/images/routes.py` – upload, full image, metadata, tile endpoints; other routers: `src/npo/settings/routes.py`, `src/npo/health/routes.py`.
+- DB layer: [`src/npo/core/database.py`](../src/npo/core/database.py) – async SQLAlchemy setup; `init_db()` runs Alembic migrations. File models: [`src/npo/images/models.py`](../src/npo/modules/images/models.py).
 - Tests & fixtures: [`tests/conftest.py`](../tests/conftest.py) – client fixtures, `TEST_DATABASE_URL`, `USE_ALEMBIC_MIGRATIONS`, `seed_data`, temp dirs.
 
 ## Important conventions & patterns ⚙️
 - Hash-based storage: Pixel hash is broken into directory chunks using `NPO_HASH_DIR_STEP` and `NPO_HASH_DIR_PARTS_COUNT` from `config.settings`. See `compute_hash_pathes()` in `services.py` for exact behavior.
 - Two hash kinds for dedup: **perceptual_hash** (dHash via pyvips, 16 hex chars) and **pixel_hash** (BLAKE2b over pixel bytes, 32 hex). See `compute_perceptual_hash()` and `compute_pixel_hash()`.
-- File model: `src/npo/files/models.py` — fields include `file_hash` (md5), `perceptual_hash`, `pixel_hash`, `meta_data` (JSON), location fields (`path_hash_dir`, `path_hash_file`). DB table names are `classname.lower() + 's'` (see `Base.__tablename__`).
+- File model: `src/npo/modules/images/models.py` — fields include `file_hash` (md5), `perceptual_hash`, `pixel_hash`, `meta_data` (JSON), location fields (`path_hash_dir`, `path_hash_file`). DB table names are `classname.lower() + 's'` (see `Base.__tablename__`).
 - DZI tiles: generated with pyvips and saved as `.szi` (ZIP container). Tiles read from ZIP (`get_tile_from_dzi`).
 - Error handling: use `APIException` with `ErrorCode` constants (`npo/constants.py`) to ensure consistent `code` and `message` structure in responses. Prefer `ErrorCode.X.formatMsg(...)` to populate messages and validate required fields.
 - Routes: prefer the `NpoApiRoute()` helper (in `src/npo/common/decorators.py`) to get standard `responses` and override examples.
@@ -34,9 +34,9 @@
   - Large test assets are cached in `tests/.cache` and seeded via `seed_data` fixture; a `skip_seed` marker is supported.
 
 ## Quick examples to reference (copy/paste) ✂️
-- Upload endpoint (single or multipart): POST `/files/upload` ➜ handled in `src/npo/routers/files/routes.py` (look for `files_route` and `NpoApiRoute`).
-- Tile retrieval: GET `/{pixel_hash}/{zoom}/{x}/{y}.jpg` ➜ handled in `src/npo/routers/files/routes.py` and served from `.szi` (ZIP DZI) via `get_tile_from_dzi` in `src/npo/files/services.py`.
-- Hash lookups: CRUD helpers use `ilike(f"{hash}%")` prefix matching — see `get_file_by_pixel_hash` and `get_file_by_perceptual_hash` in `src/npo/files/crud.py`.
+- Upload endpoint (single or multipart): POST `/images/upload` ➜ handled in `src/npo/modules/images/routes.py` (look for `files_route` and `NpoApiRoute`).
+- Tile retrieval: GET `/{pixel_hash}/{zoom}/{x}/{y}.jpg` ➜ handled in `src/npo/modules/images/routes.py` and served from `.szi` (ZIP DZI) via `get_tile_from_dzi` in `src/npo/modules/images/services.py`.
+- Hash lookups: CRUD helpers use `ilike(f"{hash}%")` prefix matching — see `get_file_by_pixel_hash` and `get_file_by_perceptual_hash` in `src/npo/modules/images/crud.py`.
 - Raise a consistent API error (use `ErrorCode` enum and `APIException`):
 ```python
 from npo.common.decorators import APIException
@@ -47,10 +47,10 @@ raise APIException(status_code=404, code=ErrorCode.FILE_NOT_FOUND, message=Error
 ## Architecture & runtime patterns 🔭
 - App: `src/npo/main.py` boots FastAPI and calls `init_db()` which runs Alembic migrations on startup (`src/npo/core/database.py`).
 - Async-first: codebase uses `AsyncSession`, `async def` endpoints, and dependency `get_session`. Long-running sync operations (pyvips, hashing) are executed with `loop.run_in_executor`.
-- Image flow: upload → compute perceptual & pixel hashes (`src/npo/files/services.py`) → compute directory path chunks (`compute_hash_pathes`) → store file + `.szi` DZI tiles and metadata.
+- Image flow: upload → compute perceptual & pixel hashes (`src/npo/modules/images/services.py`) → compute directory path chunks (`compute_hash_pathes`) → store file + `.szi` DZI tiles and metadata.
 
 ## Storage, hashing & DZI details 🗂️
-- Two hashes: `perceptual_hash` (dHash, 16 hex) and `pixel_hash` (BLAKE2b, 32 hex). See `compute_perceptual_hash` / `compute_pixel_hash` in `src/npo/files/services.py`.
+- Two hashes: `perceptual_hash` (dHash, 16 hex) and `pixel_hash` (BLAKE2b, 32 hex). See `compute_perceptual_hash` / `compute_pixel_hash` in `src/npo/modules/images/services.py`.
 - Directory layout: governed by `NPO_HASH_DIR_STEP` and `NPO_HASH_DIR_PARTS_COUNT` in settings; splitting pixel hash into chunks for nested directories (`compute_hash_pathes`).
 - DZI tiles are stored in `.szi` ZIP container; reading tiles is implemented in `get_tile_from_dzi` (returns preview for missing tiles).
 - RAW support: `extract_jpeg_preview` tries to extract a JPEG preview (requires `exiftool` and pyvips); check `python-magic` usage for mime detection.

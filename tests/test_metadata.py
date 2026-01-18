@@ -16,7 +16,7 @@ async def test_metadata(client, shared_datadir, upload_image):
 
     uploaded_file_hash = await upload_image(image_name)
 
-    response = await client.get(f"/files/{uploaded_file_hash}/metadata")
+    response = await client.get(f"/images/{uploaded_file_hash}/metadata")
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/json"
     meta_data = response.json()
@@ -38,7 +38,7 @@ async def test_raw_metadata_not_found(verify_404):
 
     pixel_hash = "abcdef1234567890abcdef1234567890"
     await verify_404(
-        f"/files/{pixel_hash}/metadata",
+        f"/images/{pixel_hash}/metadata",
         ERROR_RAW_METADATA_NOT_FOUND,
         f"Raw metadata for file {pixel_hash} not found.",
     )
@@ -49,7 +49,7 @@ async def test_photography_metadata_not_found(verify_404):
 
     pixel_hash = "abcdef1234567890abcdef1234567890"
     await verify_404(
-        f"/files/{pixel_hash}/metadata/photography",
+        f"/images/{pixel_hash}/metadata/photography",
         ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
         f"Photography metadata for file {pixel_hash} not found.",
     )

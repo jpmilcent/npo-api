@@ -15,8 +15,8 @@ from npo.core.dependencies import (
     make_storage_directory,
     make_upload_directory,
 )
-from npo.modules.files.routes import files_router
 from npo.modules.health.routes import health_router
+from npo.modules.images.routes import images_router
 from npo.modules.settings.routes import settings_router
 
 logger = logging.getLogger(config.settings.logger_name)
@@ -41,7 +41,7 @@ app = FastAPI(
 )
 app.include_router(health_router)
 app.include_router(settings_router)
-app.include_router(files_router)
+app.include_router(images_router)
 
 
 @app.middleware("http")
@@ -68,7 +68,7 @@ async def main():
     """Simple upload form for testing purposes."""
     content = """
 <body>
-<form action="/files/upload" enctype="multipart/form-data" method="post">
+<form action="/images/upload" enctype="multipart/form-data" method="post">
 <input name="files" type="file" multiple>
 <input type="submit">
 </form>

@@ -197,7 +197,7 @@ async def seed_data(session_client, large_file_cache):
         # Upload via API
         with open(cache_path, "rb") as f:
             files = {"files": (filename, f, "image/jpeg")}
-            response = await session_client.post("/files/upload", files=files)
+            response = await session_client.post("/images/upload", files=files)
             if response.status_code == status.HTTP_201_CREATED:
                 seeded_responses[filename] = response.json()
 
@@ -232,7 +232,7 @@ def upload_image(client, shared_datadir, seed_data, request):
 
             with open(image_path, "rb") as f:
                 files = {"files": (image_name, f, image_mime)}
-                response = await client.post("/files/upload", files=files)
+                response = await client.post("/images/upload", files=files)
 
         if return_full_response:
             return response

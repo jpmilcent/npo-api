@@ -16,21 +16,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core import config
 from npo.core.exceptions import APIException
-from npo.modules.files.crud import (
-    get_file_by_image_unique_id,
-    get_file_by_perceptual_hash,
-    get_file_by_pixel_hash,
+from npo.modules.images.crud import (
+    get_image_by_image_unique_id,
+    get_image_by_perceptual_hash,
+    get_image_by_pixel_hash,
 )
-from npo.modules.files.models import File as FileStorage
-from npo.modules.files.schemas import File
+from npo.modules.images.models import Image as ImageStorage
+from npo.modules.images.schemas import Image
 
 logger = logging.getLogger(__name__)
 
 
-async def build_file_infos(upload_file: UploadFile) -> File:
+async def build_image_infos(upload_file: UploadFile) -> Image:
     mime_type = await extract_mime_type(upload_file)
 
-    return File(
+    return Image(
         name=upload_file.filename,
         path=os.path.join(config.settings.uploads_dir, upload_file.filename),
         size=upload_file.size,
@@ -51,7 +51,7 @@ async def extract_mime_type(file: UploadFile) -> str:
     return mime_type
 
 
-async def save_file(upload_file: UploadFile, file: File):
+async def save_file(upload_file: UploadFile, file: Image):
     try:
         with open(file.path, "wb") as buffer:
             while True:
@@ -65,21 +65,21 @@ async def save_file(upload_file: UploadFile, file: File):
         await upload_file.close()
 
 
-async def compute_hash(file: File) -> None:
+async def compute_hash(file: Image) -> None:
     with open(file.path, "rb") as file_to_hash:
         data = file_to_hash.read()
         file.file_hash = hashlib.md5(data).hexdigest()
 
 
-def _compute_pixel_hash_sync(file: File, preview_bytes: bytes | None = None) -> str:
+def _compute_pixel_hash_sync(image: Image, preview_bytes: bytes | None = None) -> str:
     # For RAW/DNG, we must force demosaicing (development) to get the actual visual content.
     # Converting to sRGB ensures the RAW data is developed into visible pixels.
     if preview_bytes:
         img = pyvips.Image.new_from_buffer(preview_bytes, "")
-    elif is_web_format(file):
-        img = pyvips.Image.new_from_file(file.path, access="sequential")
+    elif is_web_format(image):
+        img = pyvips.Image.new_from_file(image.path, access="sequential")
     else:
-        img = pyvips.Image.new_from_file(file.path)
+        img = pyvips.Image.new_from_file(image.path)
         img = img.colourspace("srgb")
 
     file_hash = hashlib.blake2b(digest_size=16)
@@ -95,7 +95,7 @@ def _compute_pixel_hash_sync(file: File, preview_bytes: bytes | None = None) -> 
     return file_hash.hexdigest()
 
 
-async def compute_pixel_hash(file: File) -> None:
+async def compute_pixel_hash(file: Image) -> None:
     """
     Computes a BLAKE2b hash based on raw image pixels via pyvips.
     Ignores metadata (EXIF, etc).
@@ -144,42 +144,42 @@ def _compute_perceptual_hash_sync(path: str | None, data: bytes | None) -> str:
     return f"{hash_val:016x}"
 
 
-async def compute_perceptual_hash(file: File) -> None:
+async def compute_perceptual_hash(image: Image) -> None:
     """
     Computes a perceptual hash (dHash) using pyvips.
     Resistant to resizing and compression.
     """
     try:
-        web_format = is_web_format(file)
+        web_format = is_web_format(image)
         preview_bytes = None
         path = None
 
         if web_format:
-            path = file.path
+            path = image.path
         else:
-            preview_bytes = await extract_jpeg_preview(file)
+            preview_bytes = await extract_jpeg_preview(image)
 
         loop = asyncio.get_running_loop()
-        file.perceptual_hash = await loop.run_in_executor(
+        image.perceptual_hash = await loop.run_in_executor(
             None, _compute_perceptual_hash_sync, path, preview_bytes
         )
     except pyvips.Error as e:
-        logger.error(f"Error computing perceptual hash for {file.path}: {e}")
+        logger.error(f"Error computing perceptual hash for {image.path}: {e}")
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_PROCESSING_ERROR",
-            message=f"Unable to process image file {file.name} for perceptual hashing.",
+            message=f"Unable to process image file {image.name} for perceptual hashing.",
         ) from e
 
 
-def is_web_format(file: File) -> bool:
-    is_web_format = (file.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
-        file.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
+def is_web_format(image: Image) -> bool:
+    is_web_format = (image.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
+        image.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
     )
     return is_web_format
 
 
-async def extract_jpeg_preview(file: File) -> bytes | None:
+async def extract_jpeg_preview(image: Image) -> bytes | None:
     preview_bytes = None
     # On essaie d'abord PreviewImage, puis JpgFromRaw si le premier échoue
     for tag in ["-PreviewImage", "-JpgFromRaw"]:
@@ -190,7 +190,7 @@ async def extract_jpeg_preview(file: File) -> bytes | None:
                 "exiftool",
                 "-b",
                 tag,
-                file.path,
+                image.path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 limit=1024 * 1024 * 50,  # Augmentation du buffer (50 Mo) pour les grosses images
@@ -206,86 +206,86 @@ async def extract_jpeg_preview(file: File) -> bytes | None:
 
             if proc.returncode != 0:
                 logger.warning(
-                    f"Exiftool error for {file.path} with tag {tag}: {stderr.decode().strip()}"
+                    f"Exiftool error for {image.path} with tag {tag}: {stderr.decode().strip()}"
                 )
 
             if proc.returncode == 0 and stdout:
                 preview_bytes = stdout
                 break
         except Exception as e:
-            logger.warning(f"Error extracting preview for {file.path} with tag {tag}: {e}")
+            logger.warning(f"Error extracting preview for {image.path} with tag {tag}: {e}")
     return preview_bytes
 
 
-async def check_duplicates_by_perceptual_hash(file: File, db: AsyncSession) -> None:
-    if await get_file_by_perceptual_hash(file.perceptual_hash, db):
+async def check_duplicates_by_perceptual_hash(image: Image, db: AsyncSession) -> None:
+    if await get_image_by_perceptual_hash(image.perceptual_hash, db):
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_PERCEPTUAL_HASH",
-            message=_("File {file_name} with perceptual hash {hash} already exists.").format(
-                file_name=file.name,
-                hash=file.perceptual_hash,
+            message=_("Image {file_name} with perceptual hash {hash} already exists.").format(
+                file_name=image.name,
+                hash=image.perceptual_hash,
             ),
         )
 
 
-async def compute_hash_pathes(file: File) -> None:
+async def compute_hash_pathes(image: Image) -> None:
     step: int = config.settings.hash_dir_step
-    chunks = [file.pixel_hash[i : i + step] for i in range(0, len(file.pixel_hash), step)]
+    chunks = [image.pixel_hash[i : i + step] for i in range(0, len(image.pixel_hash), step)]
 
     for part, chunk in enumerate(chunks):
         if part < config.settings.hash_dir_parts_count:
-            file.path_hash_dir += chunk + "/"
+            image.path_hash_dir += chunk + "/"
         else:
-            file.path_hash_file += chunk
+            image.path_hash_file += chunk
 
 
-async def move_file(file: File) -> None:
-    extension = await get_file_extension(file)
+async def move_file(image: Image) -> None:
+    extension = await get_file_extension(image)
     storage_path = os.path.join(
-        config.settings.storage_dir, file.path_hash_dir, file.path_hash_file + extension
+        config.settings.storage_dir, image.path_hash_dir, image.path_hash_file + extension
     )
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
-    os.rename(file.path, storage_path)
-    file.path = storage_path
+    os.rename(image.path, storage_path)
+    image.path = storage_path
 
 
-async def get_file_extension(file: File) -> str:
-    if not file.mime:
+async def get_file_extension(image: Image) -> str:
+    if not image.mime:
         return ""
-    extension = mimetypes.guess_extension(file.mime)
-    if extension is None and file.mime.lower() == "image/x-adobe-dng":
+    extension = mimetypes.guess_extension(image.mime)
+    if extension is None and image.mime.lower() == "image/x-adobe-dng":
         extension = ".dng"
     return extension if extension else ""
 
 
-async def extract_metadata(file: File) -> None:
+async def extract_metadata(image: Image) -> None:
     with exiftool.ExifToolHelper() as et:
-        metadata = et.get_metadata(file.path, params=["-n"])
+        metadata = et.get_metadata(image.path, params=["-n"])
         for item in metadata:
-            file.meta_data = item
-            file.orientation = item.get("EXIF:Orientation")
-            file.image_unique_id = item.get("EXIF:ImageUniqueID")
+            image.meta_data = item
+            image.orientation = item.get("EXIF:Orientation")
+            image.image_unique_id = item.get("EXIF:ImageUniqueID")
 
             # GPS Data
-            check_gps_map_datum(file, item)
-            file.latitude = extract_metadata_latitude(item)
-            file.longitude = extract_metadata_longitude(item)
-            file.altitude = extract_metadata_altitude(item)
+            check_gps_map_datum(image, item)
+            image.latitude = extract_metadata_latitude(item)
+            image.longitude = extract_metadata_longitude(item)
+            image.altitude = extract_metadata_altitude(item)
 
             # DateTime Data
-            file.datetime_shooting = parse_exif_date(item.get("EXIF:DateTimeOriginal"))
-            file.datetime_digitized = parse_exif_date(item.get("EXIF:DateTimeDigitized"))
+            image.datetime_shooting = parse_exif_date(item.get("EXIF:DateTimeOriginal"))
+            image.datetime_digitized = parse_exif_date(item.get("EXIF:DateTimeDigitized"))
 
 
-def check_gps_map_datum(file: File, metadata: dict) -> None:
+def check_gps_map_datum(image: Image, metadata: dict) -> None:
     gps_datum = metadata.get("EXIF:GPSMapDatum")
     if gps_datum and gps_datum != "WGS-84":
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="UNSUPPORTED_GPS_DATUM",
             message=(
-                f"File {file.name} has unsupported GPS Map Datum: {gps_datum}. "
+                f"Image {image.name} has unsupported GPS Map Datum: {gps_datum}. "
                 "Only WGS-84 is supported."
             ),
         )
@@ -323,46 +323,46 @@ def parse_exif_date(date_str: str | None) -> datetime | None:
         return None
 
 
-async def check_duplicates_by_image_unique_id(file: File, db: AsyncSession) -> None:
-    if await get_file_by_image_unique_id(file.image_unique_id, db):
+async def check_duplicates_by_image_unique_id(image: Image, db: AsyncSession) -> None:
+    if await get_image_by_image_unique_id(image.image_unique_id, db):
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_IMAGE_UNIQUE_ID",
             message=_(
-                "File {file_name} with image unique ID {image_unique_id} already exists."
+                "Image {file_name} with image unique ID {image_unique_id} already exists."
             ).format(
-                file_name=file.name,
-                image_unique_id=file.image_unique_id,
+                file_name=image.name,
+                image_unique_id=image.image_unique_id,
             ),
         )
 
 
-async def store_file_infos(file: File, db: AsyncSession) -> None:
-    file_storage = await get_file_by_pixel_hash(file.pixel_hash, db)
+async def store_image_infos(image: Image, db: AsyncSession) -> None:
+    file_storage = await get_image_by_pixel_hash(image.pixel_hash, db)
 
     if file_storage:
-        data = file.model_dump(exclude_none=True)
+        data = image.model_dump(exclude_none=True)
         data.pop("id", None)
         for key, value in data.items():
             setattr(file_storage, key, value)
     else:
-        file_storage = FileStorage(**file.__dict__)
+        file_storage = ImageStorage(**image.__dict__)
         db.add(file_storage)
 
     await db.commit()
     await db.refresh(file_storage)
 
 
-async def create_dzi(file: File) -> None:
-    web_format = is_web_format(file)
+async def create_dzi(image: Image) -> None:
+    web_format = is_web_format(image)
     if not web_format:
-        preview_bytes = await extract_jpeg_preview(file)
+        preview_bytes = await extract_jpeg_preview(image)
         if preview_bytes:
             img = pyvips.Image.new_from_buffer(preview_bytes, "")
     else:
-        img = pyvips.Image.new_from_file(file.path)
+        img = pyvips.Image.new_from_file(image.path)
     img = img.autorot()
-    dzi_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".szi"
+    dzi_path = config.settings.storage_dir + image.path_hash_dir + image.path_hash_file + ".szi"
     img.dzsave(
         dzi_path,
         layout=ForeignDzLayout.GOOGLE,
@@ -375,13 +375,13 @@ async def create_dzi(file: File) -> None:
     )
 
 
-async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> bytes | None:
-    dzi_path = config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + ".szi"
+async def get_tile_from_dzi(image: ImageStorage, zoom: int, x: int, y: int) -> bytes | None:
+    dzi_path = config.settings.storage_dir + image.path_hash_dir + image.path_hash_file + ".szi"
     if not os.path.exists(dzi_path):
         return None
 
     with ZipFile(dzi_path, "r") as zip_file:
-        tile_path = f"{file.path_hash_file}/{zoom}/{x}/{y}.jpg"
+        tile_path = f"{image.path_hash_file}/{zoom}/{x}/{y}.jpg"
         try:
             with zip_file.open(tile_path) as tile_file:
                 return tile_file.read()
@@ -389,15 +389,15 @@ async def get_tile_from_dzi(file: FileStorage, zoom: int, x: int, y: int) -> byt
             return None
 
 
-async def get_image(file: FileStorage) -> bytes | None:
-    web_format = is_web_format(file)
+async def get_image(image: ImageStorage) -> bytes | None:
+    web_format = is_web_format(image)
     if not web_format:
-        return await extract_jpeg_preview(file)
+        return await extract_jpeg_preview(image)
     else:
         try:
-            extension = await get_file_extension(file)
+            extension = await get_file_extension(image)
             img_path = (
-                config.settings.storage_dir + file.path_hash_dir + file.path_hash_file + extension
+                config.settings.storage_dir + image.path_hash_dir + image.path_hash_file + extension
             )
             with open(img_path, "rb") as img_file:
                 return img_file.read()
