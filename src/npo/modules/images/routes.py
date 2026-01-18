@@ -9,22 +9,7 @@ from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
 from npo.modules.images.crud import get_image_by_pixel_hash, get_images_list
-from npo.modules.images.metadata import (
-    _format_aperture,
-    _format_color_space,
-    _format_exposure_compensation,
-    _format_exposure_mode,
-    _format_exposure_program,
-    _format_flash,
-    _format_focal_length,
-    _format_metering_mode,
-    _format_orientation,
-    _format_pixels,
-    _format_scene_capture_type,
-    _format_scene_type,
-    _format_shutter_speed,
-    _format_white_balance,
-)
+from npo.modules.images.metadata_formatters import MetadataFormatter
 from npo.modules.images.schemas import PhotographyMetadata
 from npo.modules.images.services import (
     build_image_infos,
@@ -201,31 +186,35 @@ async def get_photography_metadata(
             "cameraMaker": meta.get("EXIF:Make"),
             "cameraModel": meta.get("EXIF:Model"),
             "lensModel": meta.get("EXIF:LensModel"),
-            "focalLength": _format_focal_length(meta.get("EXIF:FocalLength")),
-            "focalLengthIn35mmFormat": _format_focal_length(
+            "focalLength": MetadataFormatter.format_focal_length(meta.get("EXIF:FocalLength")),
+            "focalLengthIn35mmFormat": MetadataFormatter.format_focal_length(
                 meta.get("EXIF:FocalLengthIn35mmFormat")
             ),
-            "aperture": _format_aperture(meta.get("EXIF:FNumber")),
-            "shutterSpeed": _format_shutter_speed(meta.get("EXIF:ExposureTime")),
+            "aperture": MetadataFormatter.format_aperture(meta.get("EXIF:FNumber")),
+            "shutterSpeed": MetadataFormatter.format_shutter_speed(meta.get("EXIF:ExposureTime")),
             "iso": meta.get("EXIF:ISO") or meta.get("EXIF:ISOSpeedRatings"),
-            "flash": _format_flash(meta.get("EXIF:Flash")),
-            "imageWidth": _format_pixels(
+            "flash": MetadataFormatter.format_flash(meta.get("EXIF:Flash")),
+            "imageWidth": MetadataFormatter.format_pixels(
                 meta.get("File:ImageWidth") or meta.get("EXIF:ExifImageWidth")
             ),
-            "imageHeight": _format_pixels(
+            "imageHeight": MetadataFormatter.format_pixels(
                 meta.get("File:ImageHeight") or meta.get("EXIF:ExifImageHeight")
             ),
-            "orientation": _format_orientation(meta.get("EXIF:Orientation")),
-            "whiteBalance": _format_white_balance(meta.get("EXIF:WhiteBalance")),
-            "exposureProgram": _format_exposure_program(meta.get("EXIF:ExposureProgram")),
-            "exposureMode": _format_exposure_mode(meta.get("EXIF:ExposureMode")),
-            "exposureCompensation": _format_exposure_compensation(
+            "orientation": MetadataFormatter.format_orientation(meta.get("EXIF:Orientation")),
+            "whiteBalance": MetadataFormatter.format_white_balance(meta.get("EXIF:WhiteBalance")),
+            "exposureProgram": MetadataFormatter.format_exposure_program(
+                meta.get("EXIF:ExposureProgram")
+            ),
+            "exposureMode": MetadataFormatter.format_exposure_mode(meta.get("EXIF:ExposureMode")),
+            "exposureCompensation": MetadataFormatter.format_exposure_compensation(
                 meta.get("EXIF:ExposureCompensation")
             ),
-            "meteringMode": _format_metering_mode(meta.get("EXIF:MeteringMode")),
-            "sceneCaptureType": _format_scene_capture_type(meta.get("EXIF:SceneCaptureType")),
-            "sceneType": _format_scene_type(meta.get("EXIF:SceneType")),
-            "colorSpace": _format_color_space(meta.get("EXIF:ColorSpace")),
+            "meteringMode": MetadataFormatter.format_metering_mode(meta.get("EXIF:MeteringMode")),
+            "sceneCaptureType": MetadataFormatter.format_scene_capture_type(
+                meta.get("EXIF:SceneCaptureType")
+            ),
+            "sceneType": MetadataFormatter.format_scene_type(meta.get("EXIF:SceneType")),
+            "colorSpace": MetadataFormatter.format_color_space(meta.get("EXIF:ColorSpace")),
         }
     else:
         raise APIException(
