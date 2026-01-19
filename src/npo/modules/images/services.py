@@ -110,7 +110,7 @@ async def compute_pixel_hash(file: Image) -> None:
             None, _compute_pixel_hash_sync, file, preview_bytes
         )
     except pyvips.Error as e:
-        logger.error(f"Error computing pixel hash for {file.path}: {e}")
+        logger.exception(f"Error computing pixel hash for {file.path}")
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_DECODING_ERROR",
@@ -164,7 +164,7 @@ async def compute_perceptual_hash(image: Image) -> None:
             None, _compute_perceptual_hash_sync, path, preview_bytes
         )
     except pyvips.Error as e:
-        logger.error(f"Error computing perceptual hash for {image.path}: {e}")
+        logger.exception(f"Error computing perceptual hash for {image.path}")
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_PROCESSING_ERROR",

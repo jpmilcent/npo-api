@@ -1,4 +1,5 @@
 import contextvars
+import json
 import logging
 import os
 from logging.config import dictConfig
@@ -65,6 +66,26 @@ class ColourizedFormatter(logging.Formatter):
         return formatted_message
 
 
+class JSONFormatter(logging.Formatter):
+    """
+    Formatter that outputs JSON strings for structured logging.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name,
+            "request_id": getattr(record, "request_id", "-"),
+        }
+        # Add extra fields if available (passed via extra={...})
+        if hasattr(record, "extra_data"):
+            log_record.update(record.extra_data)
+
+        return json.dumps(log_record)
+
+
 def setup_logging():
     """Configure logging for the application."""
     log_level = config.settings.log_level.upper()
@@ -96,8 +117,14 @@ def setup_logging():
                 "fmt": "%(levelname)s  %(asctime)s - %(name)s - [%(request_id)s] - %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
+            "json": {
+                "()": JSONFormatter,
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            },
             "plain": {
-                "format": "%(asctime)s - %(levelname)-9s - %(name)s - [%(request_id)s] - %(message)s",
+                "format": (
+                    "%(asctime)s - %(levelname)-9s - %(name)s - [%(request_id)s] - %(message)s"
+                ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
         },
@@ -109,7 +136,7 @@ def setup_logging():
                 "filters": ["request_id", "endpoint"],
             },
             "file": {
-                "formatter": "plain",
+                "formatter": "json",
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": log_file,
                 "maxBytes": config.settings.log_max_bytes,

@@ -53,8 +53,15 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
     logger.info(
-        f"{request.method} {request.url.path} - "
-        "Status: {response.status_code} - Time: {process_time:.2f}ms"
+        f"{request.method} {request.url.path} - Status: {response.status_code}",
+        extra={
+            "extra_data": {
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": round(process_time, 2),
+            }
+        },
     )
     response.headers["X-Response-Time"] = f"{process_time:.2f}ms"
     return response
