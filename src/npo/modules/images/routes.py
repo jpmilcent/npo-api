@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, status
@@ -28,6 +29,8 @@ from npo.modules.images.services import (
     save_file,
     store_image_infos,
 )
+
+logger = logging.getLogger(__name__)
 
 IMAGE_NOT_FOUND_RESPONSE = {
     "description": "Image not found",
@@ -105,8 +108,9 @@ async def compute_upload_images(
         await move_file(file)
         await store_image_infos(file, db)
         await create_dzi(file)
-        infos[file.name] = file.__dict__
 
+        logger.info("File {file.name} was uploaded successfully!")
+        infos[file.name] = file.__dict__
     return infos
 
 

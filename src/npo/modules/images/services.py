@@ -3,6 +3,7 @@ import hashlib
 import logging
 import mimetypes
 import os
+import shutil
 from datetime import datetime
 from zipfile import ZipFile
 
@@ -52,17 +53,66 @@ async def extract_mime_type(file: UploadFile) -> str:
 
 
 async def save_file(upload_file: UploadFile, file: Image):
+    if file.size:
+        check_max_upload_size(file.size)
+
+    check_required_space(file)
+
     try:
         with open(file.path, "wb") as buffer:
+            written_bytes = 0
             while True:
                 chunk = await upload_file.read(1024)
                 if not chunk:
                     break
+                written_bytes += len(chunk)
+                check_max_upload_size(written_bytes)
                 buffer.write(chunk)
-    except IOError:
-        return {"message": "There was an error uploading the file"}
+    except IOError as e:
+        msg = _("There was an error uploading the file.")
+        logger.exception(msg)
+        raise APIException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="FILE_UPLOAD_ERROR",
+            message=msg,
+        ) from e
+    except APIException:
+        clean_upload_file(file)
+        raise
     finally:
         await upload_file.close()
+
+
+def check_max_upload_size(file_size: int) -> None:
+    """Check if the file size exceeds the maximum allowed limit (content-length)."""
+    if file_size > config.backend_settings.max_upload_size:
+        msg = _("File size exceeds the maximum allowed limit.")
+        logger.error(msg)
+        raise APIException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            code="FILE_TOO_LARGE",
+            message=msg,
+        )
+
+
+def check_required_space(file: Image) -> None:
+    _total, _used, free = shutil.disk_usage(os.path.dirname(file.path))
+    required_space = config.backend_settings.upload_safety_buffer
+    if file.size:
+        required_space += file.size
+
+    if free < required_space:
+        logger.error(_(f"Not enough disk space ({free} bytes) to save the file."))
+        raise APIException(
+            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
+            code="INSUFFICIENT_STORAGE",
+            message=_("Not enough disk space to save the file."),
+        )
+
+
+def clean_upload_file(file: Image):
+    if os.path.exists(file.path):
+        os.remove(file.path)
 
 
 async def compute_hash(file: Image) -> None:

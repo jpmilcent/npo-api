@@ -27,6 +27,8 @@ class BackendSettings(CommonSettings):
     log_backup_count: int = 5
     hash_dir_parts_count: int = 6
     hash_dir_step: int = 2
+    upload_safety_buffer = 50 * 1024 * 1024  # 50 MB
+    max_upload_size: int = 500 * 1024 * 1024  # 500 MB
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
@@ -37,7 +39,7 @@ class BackendSettings(CommonSettings):
             raise ValueError("Log level must be DEBUG, INFO, WARNING, ERROR or CRITICAL")
         return v.upper()
 
-    @field_validator("log_max_bytes", mode="before")
+    @field_validator("log_max_bytes", "max_upload_size", mode="before")
     @classmethod
     def parse_human_readable_size(cls, v: str | int) -> int:
         if isinstance(v, int):
