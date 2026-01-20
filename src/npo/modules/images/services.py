@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import hashlib
 import logging
 import mimetypes
@@ -71,7 +72,7 @@ async def save_file(upload_file: UploadFile, file: Image):
                 written_bytes += len(chunk)
                 check_max_upload_size(written_bytes)
                 buffer.write(chunk)
-    except IOError as e:
+    except OSError as e:
         logger.exception("There was an error uploading the file.")
         raise APIException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -131,6 +132,7 @@ async def compute_pixel_hash(file: Image) -> None:
         preview_bytes = None
         if not is_web_format(file):
             preview_bytes = await extract_jpeg_preview(file)
+            logger.info(f"Extract JPEG preview form {file.name}")
 
         loop = asyncio.get_running_loop()
         file.pixel_hash = await loop.run_in_executor(
@@ -190,6 +192,7 @@ async def compute_perceptual_hash(image: Image) -> None:
             path = image.path
         else:
             preview_bytes = await extract_jpeg_preview(image)
+            logger.info("Perceptual hash compute on extracted JPEG preview image")
 
         loop = asyncio.get_running_loop()
         image.perceptual_hash = await loop.run_in_executor(
@@ -254,11 +257,9 @@ async def extract_jpeg_preview(image: Image) -> bytes | None:
             )
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30.0)
-            except asyncio.TimeoutError:
-                try:
+            except TimeoutError:
+                with contextlib.suppress(OSError):
                     proc.kill()
-                except OSError:
-                    pass
                 continue
 
             if proc.returncode != 0:
@@ -276,6 +277,9 @@ async def extract_jpeg_preview(image: Image) -> bytes | None:
 
 async def check_duplicates_by_perceptual_hash(image: Image, db: AsyncSession) -> None:
     if await get_image_by_perceptual_hash(image.perceptual_hash, db):
+        logging.warning(
+            f"Image {image.name} with perceptual hash {image.perceptual_hash} already exists."
+        )
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_PERCEPTUAL_HASH",
@@ -299,12 +303,14 @@ async def compute_hash_pathes(image: Image) -> None:
 
 async def move_file(image: Image) -> None:
     extension = await get_file_extension(image)
+    logging.info(f"Extension finded for {image.name}: {extension}")
     storage_path = os.path.join(
         config.settings.storage_dir, image.path_hash_dir, image.path_hash_file + extension
     )
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     os.rename(image.path, storage_path)
     image.path = storage_path
+    logging.info(f"File {image.name} moved to {storage_path}")
 
 
 async def get_file_extension(image: Image) -> str:
@@ -338,6 +344,10 @@ async def extract_metadata(image: Image) -> None:
 def check_gps_map_datum(image: Image, metadata: dict) -> None:
     gps_datum = metadata.get("EXIF:GPSMapDatum")
     if gps_datum and gps_datum != "WGS-84":
+        logging.warning(
+            f"Image {image.name} has unsupported GPS Map Datum: {gps_datum}. "
+            "Only WGS-84 is supported."
+        )
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="UNSUPPORTED_GPS_DATUM",
@@ -384,6 +394,9 @@ def parse_exif_date(date_str: str | None) -> datetime | None:
 
 async def check_duplicates_by_image_unique_id(image: Image, db: AsyncSession) -> None:
     if await get_image_by_image_unique_id(image.image_unique_id, db):
+        logging.warning(
+            f"Image {image.name} with image unique ID {image.image_unique_id} already exists."
+        )
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
             code="DUPLICATE_IMAGE_UNIQUE_ID",
@@ -437,6 +450,7 @@ async def create_dzi(image: Image) -> None:
 async def get_tile_from_dzi(image: ImageStorage, zoom: int, x: int, y: int) -> bytes | None:
     dzi_path = config.settings.storage_dir + image.path_hash_dir + image.path_hash_file + ".szi"
     if not os.path.exists(dzi_path):
+        logging.warning(f"dzi file not found for {image.name} at {dzi_path}")
         return None
 
     with ZipFile(dzi_path, "r") as zip_file:
@@ -445,6 +459,7 @@ async def get_tile_from_dzi(image: ImageStorage, zoom: int, x: int, y: int) -> b
             with zip_file.open(tile_path) as tile_file:
                 return tile_file.read()
         except KeyError:
+            logging.exception(f"Tile {tile_path} not found in dzi file {dzi_path}")
             return None
 
 
@@ -461,4 +476,5 @@ async def get_image(image: ImageStorage) -> bytes | None:
             with open(img_path, "rb") as img_file:
                 return img_file.read()
         except FileNotFoundError:
+            logging.exception(f"Image {image.name} not found at {img_path}")
             return None

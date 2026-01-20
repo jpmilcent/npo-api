@@ -19,7 +19,7 @@ class ErrorCode(StrEnum):
         "DUPLICATE_PERCEPTUAL_HASH",
         "Image {filename} with perceptual hash {perceptual_hash} already exists.",
     )
-    IMAGE_NOT_FOUND = "IMAGE_NOT_FOUND", "Image {pixel_hash} not found."
+    IMAGE_NOT_FOUND = ("IMAGE_NOT_FOUND", "Image {pixel_hash} not found.")
     IMAGES_WEBSERVICE_NOT_FOUND = (
         "IMAGES_WEBSERVICE_NOT_FOUND",
         "Webservice /images/{path} requested not found.",

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from logging.config import dictConfig
+from typing import ClassVar
 
 from npo.core import config
 
@@ -30,14 +31,14 @@ class ColourizedFormatter(logging.Formatter):
     Formatter that adds colors to the log level.
     """
 
-    level_colors = {
+    level_colors: ClassVar[dict[str, str]] = {
         "DEBUG": "\033[46m\033[30m",  # Cyan background, Black text
         "INFO": "\033[0;42m\033[37m",  # Green background, White text
         "WARNING": "\033[43m\033[30m",  # Yellow background, Black text
         "ERROR": "\033[41m\033[37m",  # Red background, White text
         "CRITICAL": "\033[0;101m\033[30m",  # Bright Red background, Black text
     }
-    reset_color = "\033[0m"
+    reset_color: ClassVar[str] = "\033[0m"
 
     def format(self, record: logging.LogRecord) -> str:
         # Save original levelname
