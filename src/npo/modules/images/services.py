@@ -46,6 +46,9 @@ async def extract_mime_type(file: UploadFile) -> str:
     # Since DNG is often interpreted as TIFF, magic function may return "image/tiff".
     # We correct this if extension is explicit.fix
     if mime_type == "image/tiff" and file.filename.lower().endswith(".dng"):
+        logger.info(
+            f"Correcting MIME type for {file.filename} from {mime_type} to image/x-adobe-dng"
+        )
         mime_type = "image/x-adobe-dng"
 
     await file.seek(0)
@@ -69,12 +72,11 @@ async def save_file(upload_file: UploadFile, file: Image):
                 check_max_upload_size(written_bytes)
                 buffer.write(chunk)
     except IOError as e:
-        msg = _("There was an error uploading the file.")
-        logger.exception(msg)
+        logger.exception("There was an error uploading the file.")
         raise APIException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="FILE_UPLOAD_ERROR",
-            message=msg,
+            message=_("There was an error uploading the file."),
         ) from e
     except APIException:
         clean_upload_file(file)
@@ -86,12 +88,11 @@ async def save_file(upload_file: UploadFile, file: Image):
 def check_max_upload_size(file_size: int) -> None:
     """Check if the file size exceeds the maximum allowed limit (content-length)."""
     if file_size > config.backend_settings.max_upload_size:
-        msg = _("File size exceeds the maximum allowed limit.")
-        logger.error(msg)
+        logger.error("File size exceeds the maximum allowed limit.")
         raise APIException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             code="FILE_TOO_LARGE",
-            message=msg,
+            message=_("File size exceeds the maximum allowed limit."),
         )
 
 
@@ -102,7 +103,7 @@ def check_required_space(file: Image) -> None:
         required_space += file.size
 
     if free < required_space:
-        logger.error(_(f"Not enough disk space ({free} bytes) to save the file."))
+        logger.error(f"Not enough disk space ({free} bytes) to save the file.")
         raise APIException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
             code="INSUFFICIENT_STORAGE",
@@ -164,10 +165,10 @@ async def compute_pixel_hash(file: Image) -> None:
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_DECODING_ERROR",
-            message=(
-                f"Unable to decode image file {file.name}. "
+            message=_(
+                "Unable to decode image file {file_name}. "
                 "The file might be corrupted or unsupported."
-            ),
+            ).format(file_name=file.name),
         ) from e
 
 
@@ -218,7 +219,9 @@ async def compute_perceptual_hash(image: Image) -> None:
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
             code="IMAGE_PROCESSING_ERROR",
-            message=f"Unable to process image file {image.name} for perceptual hashing.",
+            message=_("Unable to process image file {file_name} for perceptual hashing.").format(
+                file_name=image.name
+            ),
         ) from e
 
 
@@ -335,8 +338,10 @@ def check_gps_map_datum(image: Image, metadata: dict) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             code="UNSUPPORTED_GPS_DATUM",
             message=(
-                f"Image {image.name} has unsupported GPS Map Datum: {gps_datum}. "
-                "Only WGS-84 is supported."
+                _(
+                    "Image {file_name} has unsupported GPS Map Datum: {gps_datum}. "
+                    "Only WGS-84 is supported."
+                ).format(file_name=image.name, gps_datum=gps_datum)
             ),
         )
 
