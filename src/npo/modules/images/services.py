@@ -122,30 +122,6 @@ async def compute_hash(file: Image) -> None:
         file.file_hash = hashlib.md5(data).hexdigest()
 
 
-def _compute_pixel_hash_sync(image: Image, preview_bytes: bytes | None = None) -> str:
-    # For RAW/DNG, we must force demosaicing (development) to get the actual visual content.
-    # Converting to sRGB ensures the RAW data is developed into visible pixels.
-    if preview_bytes:
-        img = pyvips.Image.new_from_buffer(preview_bytes, "")
-    elif is_web_format(image):
-        img = pyvips.Image.new_from_file(image.path, access="sequential")
-    else:
-        img = pyvips.Image.new_from_file(image.path)
-        img = img.colourspace("srgb")
-
-    file_hash = hashlib.blake2b(digest_size=16)
-
-    # Process image in chunks using crop() which supports sequential streaming
-    chunk_height = 512
-
-    for y in range(0, img.height, chunk_height):
-        height_to_process = min(chunk_height, img.height - y)
-        data = img.crop(0, y, img.width, height_to_process).write_to_memory()
-        file_hash.update(data)
-
-    return file_hash.hexdigest()
-
-
 async def compute_pixel_hash(file: Image) -> None:
     """
     Computes a BLAKE2b hash based on raw image pixels via pyvips.
@@ -172,27 +148,32 @@ async def compute_pixel_hash(file: Image) -> None:
         ) from e
 
 
-def _compute_perceptual_hash_sync(path: str | None, data: bytes | None) -> str:
-    img = None
-    if data:
-        img = pyvips.Image.new_from_buffer(data, "")
-    elif path:
-        img = pyvips.Image.new_from_file(path, access="sequential")
+def _compute_pixel_hash_sync(image: Image, preview_bytes: bytes | None = None) -> str:
+    # For RAW/DNG, we must force demosaicing (development) to get the actual visual content.
+    # Converting to sRGB ensures the RAW data is developed into visible pixels.
+    if preview_bytes:
+        img = pyvips.Image.new_from_buffer(preview_bytes, "")
+    elif is_web_format(image):
+        img = pyvips.Image.new_from_file(image.path, access="sequential")
+    else:
+        img = pyvips.Image.new_from_file(image.path)
+        img = img.colourspace("srgb")
+        logger.info(
+            "No preview bytes or web format image for pixel hash computing, "
+            f"using default solution for {image.name}"
+        )
 
-    if img is None:
-        raise pyvips.Error("No image source available for perceptual hash")
+    file_hash = hashlib.blake2b(digest_size=16)
 
-    img = img.thumbnail_image(9, height=8, size="force")
-    img = img.colourspace("b-w")
-    pixels = img.write_to_memory()
+    # Process image in chunks using crop() which supports sequential streaming
+    chunk_height = 512
 
-    hash_val = 0
-    for row in range(8):
-        for col in range(8):
-            if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
-                hash_val |= 1 << (63 - (row * 8 + col))
+    for y in range(0, img.height, chunk_height):
+        height_to_process = min(chunk_height, img.height - y)
+        data = img.crop(0, y, img.width, height_to_process).write_to_memory()
+        file_hash.update(data)
 
-    return f"{hash_val:016x}"
+    return file_hash.hexdigest()
 
 
 async def compute_perceptual_hash(image: Image) -> None:
@@ -223,6 +204,29 @@ async def compute_perceptual_hash(image: Image) -> None:
                 file_name=image.name
             ),
         ) from e
+
+
+def _compute_perceptual_hash_sync(path: str | None, data: bytes | None) -> str:
+    img = None
+    if data:
+        img = pyvips.Image.new_from_buffer(data, "")
+    elif path:
+        img = pyvips.Image.new_from_file(path, access="sequential")
+
+    if img is None:
+        raise pyvips.Error("No image source available for perceptual hash")
+
+    img = img.thumbnail_image(9, height=8, size="force")
+    img = img.colourspace("b-w")
+    pixels = img.write_to_memory()
+
+    hash_val = 0
+    for row in range(8):
+        for col in range(8):
+            if pixels[row * 9 + col] > pixels[row * 9 + col + 1]:
+                hash_val |= 1 << (63 - (row * 8 + col))
+
+    return f"{hash_val:016x}"
 
 
 def is_web_format(image: Image) -> bool:

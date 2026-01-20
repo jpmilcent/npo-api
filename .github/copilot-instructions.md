@@ -20,6 +20,7 @@
 - Error handling: use `APIException` with `ErrorCode` constants (`npo/constants.py`) to ensure consistent `code` and `message` structure in responses. Prefer `ErrorCode.X.formatMsg(...)` to populate messages and validate required fields.
 - Routes: prefer the `NpoApiRoute()` helper (in `src/npo/common/decorators.py`) to get standard `responses` and override examples.
 - i18n: messages use `fastapi_babel`/`BabelMiddleware`; localized strings use `_()`.
+- Use Python coding style called the "Rule of Descent," popularized by Robert C. Martin in his book Clean Code. The idea is that the code should read like a newspaper article.
 
 ## Developer workflows & commands 🧰
 - Requirements: Python >= 3.13 (see `pyproject.toml`) and system `exiftool` (README indicates `exiftool --version`). Image processing uses `pyvips` (binary wheel used), and `python-magic`.

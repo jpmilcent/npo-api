@@ -79,12 +79,20 @@ src = ["src"]
 # PL : Pylint
 # PT = flake8-pytest-style (Pytest specific rules)
 # B  = flake8-bugbear (Recommanded by Flake8 to avoid issues)
-select = ["E", "W", "F", "I", "PL", "PT", "B"]
+# UP = pyupgrade (Keep code modern, e.g. type hints)
+# C90 = mccabe (Check complexity)
+# SIM = flake8-simplify (Suggestions to simplify code)
+# T20 = flake8-print (Deny print statements, prefer logging)
+# RUF = Ruff specific rules
+select = ["E", "W", "F", "I", "PL", "PT", "B", "UP", "C90", "SIM", "T20", "RUF"]
 ignore = [
     "D103",    # missing-function-docstring
     "D100",    # missing-module-docstring
     "D101",    # missing-class-docstring
 ]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
