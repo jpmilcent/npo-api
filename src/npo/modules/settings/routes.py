@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 from importlib import metadata
@@ -10,6 +11,8 @@ from npo.core.constants import ErrorCode
 from npo.core.dependencies import get_frontend_settings
 from npo.core.exceptions import APIException
 from npo.modules.settings.schema import Version
+
+logger = logging.getLogger(__name__)
 
 settings_router = APIRouter(
     prefix="/settings",
@@ -48,6 +51,7 @@ async def version():
         try:
             app_version = metadata.version(package_name)
         except metadata.PackageNotFoundError as e:
+            logger.exception(f"Version for package {package_name} not found")
             raise APIException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 code=ErrorCode.SETTINGS_VERSION_NOT_FOUND,

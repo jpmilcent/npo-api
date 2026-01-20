@@ -17,8 +17,8 @@ async def check_database(session: Annotated[AsyncSession, Depends(get_session)])
     try:
         await session.execute(text("SELECT 1"))
         return True
-    except SQLAlchemyError as e:
-        logger.error(e)
+    except SQLAlchemyError:
+        logger.exception("Database connection error")
         return False
 
 
