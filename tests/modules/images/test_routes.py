@@ -3,8 +3,6 @@ import hashlib
 import exiftool
 import pyvips
 from fastapi import status
-
-from npo.core import config
 from tests.constants import (
     ERROR_DUPLICATE_PERCEPTUAL_HASH,
     ERROR_IMAGE_NOT_FOUND,
@@ -16,6 +14,8 @@ from tests.constants import (
     IMAGE_06_NEF,
     PERCEPTUAL_HASH_LENGTH,
 )
+
+from npo.core import config
 
 
 async def test_upload_image(shared_datadir, upload_image):

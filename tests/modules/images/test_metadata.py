@@ -1,6 +1,5 @@
 import exiftool
 from fastapi import status
-
 from tests.constants import (
     ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
     ERROR_RAW_METADATA_NOT_FOUND,
