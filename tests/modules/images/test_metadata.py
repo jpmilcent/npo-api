@@ -7,11 +7,11 @@ from tests.constants import (
 )
 
 
-async def test_metadata(client, shared_datadir, upload_image):
+async def test_metadata(client, large_file_cache, upload_image):
     """Test the metadata endpoint."""
 
     image_name = IMAGE_01_JPG
-    image_path = shared_datadir / image_name
+    image_path = large_file_cache / image_name
 
     uploaded_file_hash = await upload_image(image_name)
 

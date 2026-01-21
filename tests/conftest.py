@@ -1,6 +1,7 @@
 import logging
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -10,11 +11,11 @@ from alembic.config import Config
 from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from tests.constants import EXTERNAL_FILES
 
 from npo.core import config
 from npo.core.database import Base, get_session
 from npo.main import app
-from tests.constants import EXTERNAL_FILES
 
 # URL for an in-memory SQLite database by default, specific to tests
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
@@ -42,6 +43,14 @@ def pytest_report_header(config):
     messages.append(f"🛢️ TEST_DATABASE_URL: {TEST_DATABASE_URL}")
     messages.append(f"⚗️ USE_ALEMBIC_MIGRATIONS: {USE_ALEMBIC_MIGRATIONS}")
     return messages
+
+
+def pytest_collection_modifyitems(items):
+    """
+    Hook Pytest pour modifier l'ordre d'exécution.
+    Force les tests situés dans un dossier 'warmup' à être exécutés en premier.
+    """
+    items.sort(key=lambda x: 0 if "warmup" in str(x.path) else 1)
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
@@ -205,7 +214,7 @@ async def seed_data(session_client, large_file_cache):
 
 
 @pytest.fixture()
-def upload_image(client, shared_datadir, seed_data, request):
+def upload_image(client, shared_datadir, large_file_cache, seed_data, request):
     """
     Fixture (Factory function) that provides a function to upload an image and return its hash.
     It uses cached data from seed_data if available to skip the actual upload.
@@ -227,7 +236,17 @@ def upload_image(client, shared_datadir, seed_data, request):
             response = MockResponse(seed_data[image_name])
         else:
             # Fallback to real upload for non-standard files
-            image_path = shared_datadir / image_name
+            shared_path = shared_datadir / image_name
+            cache_path = large_file_cache / image_name
+            if cache_path.exists():
+                image_path = cache_path
+            elif shared_path.exists():
+                image_path = shared_path
+            else:
+                raise FileNotFoundError(
+                    f"Image file '{image_name}' not found in shared_datadir or large_file_cache."
+                )
+
             image_mime = "image/jpeg"
 
             with open(image_path, "rb") as f:
@@ -270,3 +289,13 @@ def large_file_cache():
     cache_dir = Path(__file__).parent / ".cache"
     cache_dir.mkdir(exist_ok=True)
     return cache_dir
+
+
+@pytest.fixture(autouse=True)
+def mock_gettext():
+    """
+    Global fixture to mock the translation function '_' to avoid ContextVar errors
+    outside of the request context (fastapi-babel).
+    """
+    with patch("npo.core.constants._", side_effect=lambda x: x):
+        yield

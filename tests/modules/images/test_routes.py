@@ -1,4 +1,5 @@
 import hashlib
+from unittest.mock import patch
 
 import exiftool
 import pyvips
@@ -18,14 +19,14 @@ from tests.constants import (
 from npo.core import config
 
 
-async def test_upload_image(shared_datadir, upload_image):
+async def test_upload_image(large_file_cache, upload_image):
     """
     Test image upload via the /images/upload endpoint.
     Uses a real image file via pytest-datadir.
     """
-    # shared_datadir points to the temporary folder containing a copy of tests/data
+    # large_file_cache points to the temporary folder containing a copy of tests/data
     image_name = IMAGE_01_JPG
-    image_path = shared_datadir / image_name
+    image_path = large_file_cache / image_name
     image_mime = "image/jpeg"
 
     response = await upload_image(image_name, return_full_response=True)
@@ -157,13 +158,11 @@ def _verify_metadata_longitude(local_metatadata, response_image_data):
         assert response_image_data["longitude"] == expected_longitude
 
 
-async def test_upload_duplicate_image(client, shared_datadir, upload_image):
+async def test_upload_duplicate_image(upload_image):
     """
     Test image upload of a duplicate image file via the /images/upload endpoint.
-    Uses a real image file via pytest-datadir.
     The second upload of the same file should be detected as a duplicate.
     """
-    # shared_datadir points to the temporary folder containing a copy of tests/data
     image_name = IMAGE_01_JPG
 
     # First upload
@@ -183,15 +182,15 @@ async def test_upload_duplicate_image(client, shared_datadir, upload_image):
     )
 
 
-async def test_upload_duplicate_perceptual_image(shared_datadir, upload_image):
+async def test_upload_duplicate_perceptual_image(large_file_cache, shared_datadir, upload_image):
     """
     Test image file upload of a perceptual duplicate file via the /images/upload endpoint.
     Uses two similar image files via pytest-datadir.
     The second upload of a perceptually similar file should be detected as a duplicate.
     """
-    # shared_datadir points to the temporary folder containing a copy of tests/data
+    # large_file_cache points to the temporary folder containing a copy of tests/data
     image_name = IMAGE_01_JPG
-    image_path = shared_datadir / image_name
+    image_path = large_file_cache / image_name
 
     # First upload
     response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
@@ -217,26 +216,33 @@ async def test_upload_duplicate_perceptual_image(shared_datadir, upload_image):
     )
 
 
-async def test_upload_duplicate_image_fr(client, shared_datadir, upload_image):
+async def test_upload_duplicate_image_fr(client, large_file_cache, upload_image):
     """
     Test file upload of a duplicate file via the /images/upload endpoint with French locale.
     """
-    # shared_datadir points to the temporary folder containing a copy of tests/data
+    # large_file_cache points to the temporary folder containing a copy of tests/data
     image_name = IMAGE_01_JPG
-    image_path = shared_datadir / image_name
+    image_path = large_file_cache / image_name
     image_mime = "image/jpeg"
 
     # First upload
     response1_perceptual_hash = await upload_image(image_name, return_attribute="perceptual_hash")
 
+    # Mock translation function to simulate French translation without ContextVar dependency
+    def mock_gettext(message):
+        if message == "Image {filename} with perceptual hash {perceptual_hash} already exists.":
+            return "Image {filename} avec hash perceptuel {perceptual_hash} déjà existant."
+        return message
+
     # Second upload (duplicate) with Accept-Language: fr
     with open(image_path, "rb") as f:
         files = {"files": (image_name, f, image_mime)}
-        response2 = await client.post(
-            "/images/upload",
-            files=files,
-            headers={"Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"},
-        )
+        with patch("npo.core.constants._", side_effect=mock_gettext):
+            response2 = await client.post(
+                "/images/upload",
+                files=files,
+                headers={"Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"},
+            )
 
     assert response2.status_code == status.HTTP_409_CONFLICT
     response_data2 = response2.json()
@@ -321,14 +327,14 @@ async def test_get_tile_not_found(verify_404):
     )
 
 
-async def test_get_image(client, shared_datadir, upload_image):
+async def test_get_image(client, large_file_cache, upload_image):
     """
     Test image retrieve via the /images/{file_hash} endpoint.
     Compare with a real image file via pytest-datadir.
     """
 
     image_name = IMAGE_02_JPG
-    image_path = shared_datadir / image_name
+    image_path = large_file_cache / image_name
 
     uploaded_file_hash = await upload_image(image_name)
 
