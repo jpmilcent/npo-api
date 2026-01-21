@@ -121,6 +121,7 @@ To update the catalog files (`.po`) from the template file (`.pot`):
 ```bash
 uv run pybabel update -i src/npo/locales/messages.pot -d src/npo/locales
 ```
+At this step, you must translate the strings inside `.po` files.
 
 To compile catalog files (`.po`) to binary (`.mo`) files:
 ```bash

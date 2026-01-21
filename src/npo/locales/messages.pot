@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-18 17:56+0100\n"
+"POT-Creation-Date: 2026-01-21 20:33+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,13 +17,74 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/npo/modules/images/services.py:225
+#: src/npo/core/constants.py:30
 #, python-brace-format
-msgid "Image {file_name} with perceptual hash {hash} already exists."
+msgid "Image {filename} with perceptual hash {perceptual_hash} already exists."
 msgstr ""
 
-#: src/npo/modules/images/services.py:332
+#: src/npo/core/constants.py:34
 #, python-brace-format
-msgid "Image {file_name} with image unique ID {image_unique_id} already exists."
+msgid "Image {filename} with image unique ID {image_unique_id} already exists."
+msgstr ""
+
+#: src/npo/core/constants.py:36
+msgid "File size exceeds the maximum allowed limit."
+msgstr ""
+
+#: src/npo/core/constants.py:37
+msgid "There was an error uploading the file."
+msgstr ""
+
+#: src/npo/core/constants.py:38
+#, python-brace-format
+msgid "Unable to decode image file {filename}."
+msgstr ""
+
+#: src/npo/core/constants.py:39
+#, python-brace-format
+msgid "Image {pixel_hash} not found."
+msgstr ""
+
+#: src/npo/core/constants.py:42
+#, python-brace-format
+msgid "Unable to process image file {filename} for perceptual hashing."
+msgstr ""
+
+#: src/npo/core/constants.py:46
+#, python-brace-format
+msgid "Webservice /images/{path} requested not found."
+msgstr ""
+
+#: src/npo/core/constants.py:50
+msgid "Not enough disk space to save the file."
+msgstr ""
+
+#: src/npo/core/constants.py:54
+#, python-brace-format
+msgid "Raw metadata for file {pixel_hash} not found."
+msgstr ""
+
+#: src/npo/core/constants.py:58
+#, python-brace-format
+msgid "Photography metadata for file {pixel_hash} not found."
+msgstr ""
+
+#: src/npo/core/constants.py:62
+#, python-brace-format
+msgid "Webservice /settings/{path} requested not found."
+msgstr ""
+
+#: src/npo/core/constants.py:67
+#, python-brace-format
+msgid ""
+"The application version could not be determined for package "
+"'{package_name}'. Check if the package is installed."
+msgstr ""
+
+#: src/npo/core/constants.py:74
+#, python-brace-format
+msgid ""
+"Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 "
+"is supported."
 msgstr ""
 
