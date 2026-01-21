@@ -22,60 +22,20 @@ from npo.modules.images.crud import (
     get_image_by_perceptual_hash,
     get_image_by_pixel_hash,
 )
+from npo.modules.images.exceptions import (
+    DomainError,
+    DuplicateImageError,
+    FileTooLargeError,
+    ImageDecodingError,
+    ImageProcessingError,
+    InsufficientStorageError,
+    StorageError,
+    UnsupportedGpsDatumError,
+)
 from npo.modules.images.models import Image as ImageStorage
 from npo.modules.images.schemas import Image
 
 logger = logging.getLogger(__name__)
-
-
-class DomainError(Exception):
-    """Base class for domain exceptions."""
-
-    def __init__(self, code: ErrorCode, **kwargs):
-        self.code = code
-        self.kwargs = kwargs
-
-
-class DuplicateImageError(DomainError):
-    """Exception raised when an image already exists."""
-
-    pass
-
-
-class InsufficientStorageError(DomainError):
-    """Exception raised when there is not enough storage space."""
-
-    pass
-
-
-class FileTooLargeError(DomainError):
-    """Exception raised when file size exceeds limit."""
-
-    pass
-
-
-class StorageError(DomainError):
-    """Exception raised when storage operation fails."""
-
-    pass
-
-
-class ImageDecodingError(DomainError):
-    """Exception raised when image decoding fails."""
-
-    pass
-
-
-class ImageProcessingError(DomainError):
-    """Exception raised when image processing fails."""
-
-    pass
-
-
-class UnsupportedGpsDatumError(DomainError):
-    """Exception raised when GPS datum is not supported."""
-
-    pass
 
 
 async def build_image_infos(upload_file: UploadFile) -> Image:

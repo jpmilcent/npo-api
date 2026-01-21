@@ -10,9 +10,7 @@ from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
 from npo.modules.images.crud import get_image_by_pixel_hash, get_images_list
-from npo.modules.images.metadata_formatters import MetadataFormatter
-from npo.modules.images.schemas import PhotographyMetadata
-from npo.modules.images.services import (
+from npo.modules.images.exceptions import (
     DomainError,
     DuplicateImageError,
     FileTooLargeError,
@@ -21,6 +19,10 @@ from npo.modules.images.services import (
     InsufficientStorageError,
     StorageError,
     UnsupportedGpsDatumError,
+)
+from npo.modules.images.metadata_formatters import MetadataFormatter
+from npo.modules.images.schemas import PhotographyMetadata
+from npo.modules.images.services import (
     build_image_infos,
     check_duplicates_by_image_unique_id,
     check_duplicates_by_perceptual_hash,
@@ -61,7 +63,7 @@ PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE = {
 DOMAIN_ERROR_STATUS_MAP = {
     DuplicateImageError: status.HTTP_409_CONFLICT,
     InsufficientStorageError: status.HTTP_507_INSUFFICIENT_STORAGE,
-    FileTooLargeError: status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+    FileTooLargeError: status.HTTP_413_CONTENT_TOO_LARGE,
     StorageError: status.HTTP_500_INTERNAL_SERVER_ERROR,
     ImageDecodingError: status.HTTP_400_BAD_REQUEST,
     ImageProcessingError: status.HTTP_400_BAD_REQUEST,
