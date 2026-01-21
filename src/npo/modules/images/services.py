@@ -11,13 +11,12 @@ from zipfile import ZipFile
 import exiftool
 import magic
 import pyvips
-from fastapi import UploadFile, status
+from fastapi import UploadFile
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core import config
 from npo.core.constants import ErrorCode
-from npo.core.exceptions import APIException
 from npo.modules.images.crud import (
     get_image_by_image_unique_id,
     get_image_by_perceptual_hash,
@@ -27,6 +26,56 @@ from npo.modules.images.models import Image as ImageStorage
 from npo.modules.images.schemas import Image
 
 logger = logging.getLogger(__name__)
+
+
+class DomainError(Exception):
+    """Base class for domain exceptions."""
+
+    def __init__(self, code: ErrorCode, **kwargs):
+        self.code = code
+        self.kwargs = kwargs
+
+
+class DuplicateImageError(DomainError):
+    """Exception raised when an image already exists."""
+
+    pass
+
+
+class InsufficientStorageError(DomainError):
+    """Exception raised when there is not enough storage space."""
+
+    pass
+
+
+class FileTooLargeError(DomainError):
+    """Exception raised when file size exceeds limit."""
+
+    pass
+
+
+class StorageError(DomainError):
+    """Exception raised when storage operation fails."""
+
+    pass
+
+
+class ImageDecodingError(DomainError):
+    """Exception raised when image decoding fails."""
+
+    pass
+
+
+class ImageProcessingError(DomainError):
+    """Exception raised when image processing fails."""
+
+    pass
+
+
+class UnsupportedGpsDatumError(DomainError):
+    """Exception raised when GPS datum is not supported."""
+
+    pass
 
 
 async def build_image_infos(upload_file: UploadFile) -> Image:
@@ -74,12 +123,10 @@ async def save_file(upload_file: UploadFile, file: Image):
                 buffer.write(chunk)
     except OSError as e:
         logger.exception(f"There was an error uploading the file {file.name}")
-        raise APIException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        raise StorageError(
             code=ErrorCode.FILE_UPLOAD_ERROR,
-            message=ErrorCode.FILE_UPLOAD_ERROR.formatMsg(),
         ) from e
-    except APIException:
+    except DomainError:
         clean_upload_file(file)
         raise
     finally:
@@ -90,10 +137,8 @@ def check_max_upload_size(file_size: int) -> None:
     """Check if the file size exceeds the maximum allowed limit (content-length)."""
     if file_size > config.backend_settings.max_upload_size:
         logger.error("File size exceeds the maximum allowed limit.")
-        raise APIException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        raise FileTooLargeError(
             code=ErrorCode.FILE_TOO_LARGE,
-            message=ErrorCode.FILE_TOO_LARGE.formatMsg(),
         )
 
 
@@ -105,10 +150,8 @@ def check_required_space(file: Image) -> None:
 
     if free < required_space:
         logger.error(f"Not enough disk space ({free} bytes) to save the file.")
-        raise APIException(
-            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
+        raise InsufficientStorageError(
             code=ErrorCode.INSUFFICIENT_STORAGE,
-            message=ErrorCode.INSUFFICIENT_STORAGE.formatMsg(),
         )
 
 
@@ -140,10 +183,9 @@ async def compute_pixel_hash(file: Image) -> None:
         )
     except pyvips.Error as e:
         logger.exception(f"Error computing pixel hash for {file.path}")
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+        raise ImageDecodingError(
             code=ErrorCode.IMAGE_DECODING_ERROR,
-            message=ErrorCode.IMAGE_DECODING_ERROR.formatMsg(filename=file.name),
+            filename=file.name,
         ) from e
 
 
@@ -197,10 +239,9 @@ async def compute_perceptual_hash(image: Image) -> None:
         )
     except pyvips.Error as e:
         logger.exception(f"Error computing perceptual hash for {image.path}")
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+        raise ImageProcessingError(
             code=ErrorCode.IMAGE_PROCESSING_ERROR,
-            message=ErrorCode.IMAGE_PROCESSING_ERROR.formatMsg(filename=image.name),
+            filename=image.name,
         ) from e
 
 
@@ -275,13 +316,10 @@ async def check_duplicates_by_perceptual_hash(image: Image, db: AsyncSession) ->
         logging.warning(
             f"Image {image.name} with perceptual hash {image.perceptual_hash} already exists."
         )
-        raise APIException(
-            status_code=status.HTTP_409_CONFLICT,
+        raise DuplicateImageError(
             code=ErrorCode.DUPLICATE_PERCEPTUAL_HASH,
-            message=ErrorCode.DUPLICATE_PERCEPTUAL_HASH.formatMsg(
-                filename=image.name,
-                perceptual_hash=image.perceptual_hash,
-            ),
+            filename=image.name,
+            perceptual_hash=image.perceptual_hash,
         )
 
 
@@ -343,12 +381,10 @@ def check_gps_map_datum(image: Image, metadata: dict) -> None:
             f"Image {image.name} has unsupported GPS Map Datum: {gps_datum}. "
             "Only WGS-84 is supported."
         )
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+        raise UnsupportedGpsDatumError(
             code=ErrorCode.UNSUPPORTED_GPS_DATUM,
-            message=ErrorCode.UNSUPPORTED_GPS_DATUM.formatMsg(
-                filename=image.name, gps_datum=gps_datum
-            ),
+            filename=image.name,
+            gps_datum=gps_datum,
         )
 
 
@@ -389,13 +425,10 @@ async def check_duplicates_by_image_unique_id(image: Image, db: AsyncSession) ->
         logging.warning(
             f"Image {image.name} with image unique ID {image.image_unique_id} already exists."
         )
-        raise APIException(
-            status_code=status.HTTP_409_CONFLICT,
+        raise DuplicateImageError(
             code=ErrorCode.DUPLICATE_IMAGE_UNIQUE_ID,
-            message=ErrorCode.DUPLICATE_IMAGE_UNIQUE_ID.formatMsg(
-                filename=image.name,
-                image_unique_id=image.image_unique_id,
-            ),
+            filename=image.name,
+            image_unique_id=image.image_unique_id,
         )
 
 

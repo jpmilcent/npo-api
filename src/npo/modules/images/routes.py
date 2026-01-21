@@ -13,6 +13,14 @@ from npo.modules.images.crud import get_image_by_pixel_hash, get_images_list
 from npo.modules.images.metadata_formatters import MetadataFormatter
 from npo.modules.images.schemas import PhotographyMetadata
 from npo.modules.images.services import (
+    DomainError,
+    DuplicateImageError,
+    FileTooLargeError,
+    ImageDecodingError,
+    ImageProcessingError,
+    InsufficientStorageError,
+    StorageError,
+    UnsupportedGpsDatumError,
     build_image_infos,
     check_duplicates_by_image_unique_id,
     check_duplicates_by_perceptual_hash,
@@ -48,6 +56,16 @@ PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE = {
     "description": "Photography metadata not found",
     "code": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
     "message": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.message,
+}
+
+DOMAIN_ERROR_STATUS_MAP = {
+    DuplicateImageError: status.HTTP_409_CONFLICT,
+    InsufficientStorageError: status.HTTP_507_INSUFFICIENT_STORAGE,
+    FileTooLargeError: status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+    StorageError: status.HTTP_500_INTERNAL_SERVER_ERROR,
+    ImageDecodingError: status.HTTP_400_BAD_REQUEST,
+    ImageProcessingError: status.HTTP_400_BAD_REQUEST,
+    UnsupportedGpsDatumError: status.HTTP_400_BAD_REQUEST,
 }
 
 images_router = APIRouter(
@@ -95,19 +113,26 @@ async def compute_upload_images(
     for upload_file in files:
         file = await build_image_infos(upload_file)
 
-        await save_file(upload_file, file)
+        try:
+            await save_file(upload_file, file)
+            await compute_perceptual_hash(file)
+            await check_duplicates_by_perceptual_hash(file, db)
+            await extract_metadata(file)
+            await check_duplicates_by_image_unique_id(file, db)
 
-        await compute_perceptual_hash(file)
-        await check_duplicates_by_perceptual_hash(file, db)
-        await extract_metadata(file)
-        await check_duplicates_by_image_unique_id(file, db)
-
-        await compute_hash(file)
-        await compute_pixel_hash(file)
-        await compute_hash_pathes(file)
-        await move_file(file)
-        await store_image_infos(file, db)
-        await create_dzi(file)
+            await compute_hash(file)
+            await compute_pixel_hash(file)
+            await compute_hash_pathes(file)
+            await move_file(file)
+            await store_image_infos(file, db)
+            await create_dzi(file)
+        except DomainError as e:
+            status_code = DOMAIN_ERROR_STATUS_MAP.get(type(e), status.HTTP_400_BAD_REQUEST)
+            raise APIException(
+                status_code=status_code,
+                code=e.code,
+                message=e.code.formatMsg(**e.kwargs),
+            ) from e
 
         logger.info("File {file.name} was uploaded successfully!")
         infos[file.name] = file.__dict__
