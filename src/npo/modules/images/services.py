@@ -12,11 +12,11 @@ import exiftool
 import magic
 import pyvips
 from fastapi import UploadFile, status
-from fastapi_babel import _
 from pyvips.enums import ForeignDzContainer, ForeignDzDepth, ForeignDzLayout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core import config
+from npo.core.constants import ErrorCode
 from npo.core.exceptions import APIException
 from npo.modules.images.crud import (
     get_image_by_image_unique_id,
@@ -73,11 +73,11 @@ async def save_file(upload_file: UploadFile, file: Image):
                 check_max_upload_size(written_bytes)
                 buffer.write(chunk)
     except OSError as e:
-        logger.exception("There was an error uploading the file.")
+        logger.exception(f"There was an error uploading the file {file.name}")
         raise APIException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            code="FILE_UPLOAD_ERROR",
-            message=_("There was an error uploading the file."),
+            code=ErrorCode.FILE_UPLOAD_ERROR,
+            message=ErrorCode.FILE_UPLOAD_ERROR.formatMsg(),
         ) from e
     except APIException:
         clean_upload_file(file)
@@ -92,8 +92,8 @@ def check_max_upload_size(file_size: int) -> None:
         logger.error("File size exceeds the maximum allowed limit.")
         raise APIException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            code="FILE_TOO_LARGE",
-            message=_("File size exceeds the maximum allowed limit."),
+            code=ErrorCode.FILE_TOO_LARGE,
+            message=ErrorCode.FILE_TOO_LARGE.formatMsg(),
         )
 
 
@@ -107,8 +107,8 @@ def check_required_space(file: Image) -> None:
         logger.error(f"Not enough disk space ({free} bytes) to save the file.")
         raise APIException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
-            code="INSUFFICIENT_STORAGE",
-            message=_("Not enough disk space to save the file."),
+            code=ErrorCode.INSUFFICIENT_STORAGE,
+            message=ErrorCode.INSUFFICIENT_STORAGE.formatMsg(),
         )
 
 
@@ -142,11 +142,8 @@ async def compute_pixel_hash(file: Image) -> None:
         logger.exception(f"Error computing pixel hash for {file.path}")
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            code="IMAGE_DECODING_ERROR",
-            message=_(
-                "Unable to decode image file {file_name}. "
-                "The file might be corrupted or unsupported."
-            ).format(file_name=file.name),
+            code=ErrorCode.IMAGE_DECODING_ERROR,
+            message=ErrorCode.IMAGE_DECODING_ERROR.formatMsg(filename=file.name),
         ) from e
 
 
@@ -202,10 +199,8 @@ async def compute_perceptual_hash(image: Image) -> None:
         logger.exception(f"Error computing perceptual hash for {image.path}")
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            code="IMAGE_PROCESSING_ERROR",
-            message=_("Unable to process image file {file_name} for perceptual hashing.").format(
-                file_name=image.name
-            ),
+            code=ErrorCode.IMAGE_PROCESSING_ERROR,
+            message=ErrorCode.IMAGE_PROCESSING_ERROR.formatMsg(filename=image.name),
         ) from e
 
 
@@ -282,10 +277,10 @@ async def check_duplicates_by_perceptual_hash(image: Image, db: AsyncSession) ->
         )
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
-            code="DUPLICATE_PERCEPTUAL_HASH",
-            message=_("Image {file_name} with perceptual hash {hash} already exists.").format(
-                file_name=image.name,
-                hash=image.perceptual_hash,
+            code=ErrorCode.DUPLICATE_PERCEPTUAL_HASH,
+            message=ErrorCode.DUPLICATE_PERCEPTUAL_HASH.formatMsg(
+                filename=image.name,
+                perceptual_hash=image.perceptual_hash,
             ),
         )
 
@@ -350,12 +345,9 @@ def check_gps_map_datum(image: Image, metadata: dict) -> None:
         )
         raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            code="UNSUPPORTED_GPS_DATUM",
-            message=(
-                _(
-                    "Image {file_name} has unsupported GPS Map Datum: {gps_datum}. "
-                    "Only WGS-84 is supported."
-                ).format(file_name=image.name, gps_datum=gps_datum)
+            code=ErrorCode.UNSUPPORTED_GPS_DATUM,
+            message=ErrorCode.UNSUPPORTED_GPS_DATUM.formatMsg(
+                filename=image.name, gps_datum=gps_datum
             ),
         )
 
@@ -399,11 +391,9 @@ async def check_duplicates_by_image_unique_id(image: Image, db: AsyncSession) ->
         )
         raise APIException(
             status_code=status.HTTP_409_CONFLICT,
-            code="DUPLICATE_IMAGE_UNIQUE_ID",
-            message=_(
-                "Image {file_name} with image unique ID {image_unique_id} already exists."
-            ).format(
-                file_name=image.name,
+            code=ErrorCode.DUPLICATE_IMAGE_UNIQUE_ID,
+            message=ErrorCode.DUPLICATE_IMAGE_UNIQUE_ID.formatMsg(
+                filename=image.name,
                 image_unique_id=image.image_unique_id,
             ),
         )
