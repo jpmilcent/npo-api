@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-21 20:33+0100\n"
+"POT-Creation-Date: 2026-01-22 08:54+0100\n"
 "PO-Revision-Date: 2026-01-14 14:11+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -49,7 +49,9 @@ msgstr "Image avec le pixel hash {pixel_hash} introuvable."
 #: src/npo/core/constants.py:42
 #, python-brace-format
 msgid "Unable to process image file {filename} for perceptual hashing."
-msgstr "Incapable de traiter le fichier image {filename} pour le hashage perceptuel."
+msgstr ""
+"Incapable de traiter le fichier image {filename} pour le hashage "
+"perceptuel."
 
 #: src/npo/core/constants.py:46
 #, python-brace-format
@@ -68,7 +70,9 @@ msgstr "Métadonnées brutes du fichier avec le pixel hash {pixel_hash} introuva
 #: src/npo/core/constants.py:58
 #, python-brace-format
 msgid "Photography metadata for file {pixel_hash} not found."
-msgstr "Métadonnées de photographie du fichier avec le pixel hash {pixel_hash} introuvable."
+msgstr ""
+"Métadonnées de photographie du fichier avec le pixel hash {pixel_hash} "
+"introuvable."
 
 #: src/npo/core/constants.py:62
 #, python-brace-format
@@ -80,14 +84,187 @@ msgstr "Webservice /settings/{path} demandé introuvable."
 msgid ""
 "The application version could not be determined for package "
 "'{package_name}'. Check if the package is installed."
-msgstr "La version de l'application ne peut pas être déterminée pour le paquet "
-"'{package_name}'. Vérifiez si le paquet est installé.
+msgstr ""
+"La version de l'application ne peut pas être déterminée pour le paquet "
+"'{package_name}'. Vérifiez si le paquet est installé"
 
 #: src/npo/core/constants.py:74
 #, python-brace-format
 msgid ""
 "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 "
 "is supported."
-msgstr "Image {filename} avec un datum GPS non pris en charge : {gps_datum}. "
-"Seul le datum WGS-84 est pris en charge.
+msgstr ""
+"Image {filename} avec un datum GPS non pris en charge : {gps_datum}. Seul"
+" le datum WGS-84 est pris en charge"
+
+#: src/npo/modules/images/metadata_formatters.py:56
+msgid "No Flash"
+msgstr "Pas de Flash"
+
+#: src/npo/modules/images/metadata_formatters.py:60
+msgid "Flash fired"
+msgstr "Flash déclenché"
+
+#: src/npo/modules/images/metadata_formatters.py:60
+msgid "Flash did not fire"
+msgstr "Flash non déclenché"
+
+#: src/npo/modules/images/metadata_formatters.py:65
+msgid "auto"
+msgstr "auto"
+
+#: src/npo/modules/images/metadata_formatters.py:67
+msgid "compulsory"
+msgstr "imposée"
+
+#: src/npo/modules/images/metadata_formatters.py:69
+msgid "suppressed"
+msgstr "supprimée "
+
+#: src/npo/modules/images/metadata_formatters.py:72
+msgid "red-eye reduction"
+msgstr "réduction des yeux rouges"
+
+#: src/npo/modules/images/metadata_formatters.py:85
+msgid "Horizontal (normal)"
+msgstr "Horizontal (normal)"
+
+#: src/npo/modules/images/metadata_formatters.py:86
+msgid "Mirror horizontal"
+msgstr "Miroir horizontal"
+
+#: src/npo/modules/images/metadata_formatters.py:87
+msgid "Rotate 180"
+msgstr "Rotation de 180 degrés"
+
+#: src/npo/modules/images/metadata_formatters.py:88
+msgid "Mirror vertical"
+msgstr "Miroir vertical"
+
+#: src/npo/modules/images/metadata_formatters.py:89
+msgid "Mirror horizontal and rotate 270 CW"
+msgstr "Mirroir horizontal et rotation de 270 degrés sens horaire"
+
+#: src/npo/modules/images/metadata_formatters.py:90
+msgid "Rotate 90 CW"
+msgstr "Rotation de 90 degrés sens horaire"
+
+#: src/npo/modules/images/metadata_formatters.py:91
+msgid "Mirror horizontal and rotate 90 CW"
+msgstr "Mirroir horizontal et rotation de 90 degrés sens horaire"
+
+#: src/npo/modules/images/metadata_formatters.py:92
+msgid "Rotate 270 CW"
+msgstr "Rotation de 270 degrés sens horaire"
+
+#: src/npo/modules/images/metadata_formatters.py:115
+#: src/npo/modules/images/metadata_formatters.py:150
+msgid "Auto"
+msgstr "Auto"
+
+#: src/npo/modules/images/metadata_formatters.py:116
+#: src/npo/modules/images/metadata_formatters.py:130
+#: src/npo/modules/images/metadata_formatters.py:151
+msgid "Manual"
+msgstr "Manuel"
+
+#: src/npo/modules/images/metadata_formatters.py:129
+msgid "Not defined"
+msgstr "Non défini"
+
+#: src/npo/modules/images/metadata_formatters.py:131
+msgid "Normal program"
+msgstr "Programme normal"
+
+#: src/npo/modules/images/metadata_formatters.py:132
+msgid "Aperture priority"
+msgstr "Priorité ouverture"
+
+#: src/npo/modules/images/metadata_formatters.py:133
+msgid "Shutter priority"
+msgstr "Priorité à l'obturateur"
+
+#: src/npo/modules/images/metadata_formatters.py:134
+msgid "Creative program"
+msgstr "Programme créatif"
+
+#: src/npo/modules/images/metadata_formatters.py:135
+msgid "Action program"
+msgstr "Programme action"
+
+#: src/npo/modules/images/metadata_formatters.py:136
+msgid "Portrait mode"
+msgstr "Mode portrait"
+
+#: src/npo/modules/images/metadata_formatters.py:137
+msgid "Landscape mode"
+msgstr "Mode paysage"
+
+#: src/npo/modules/images/metadata_formatters.py:152
+msgid "Auto bracket"
+msgstr "Bracket automatique"
+
+#: src/npo/modules/images/metadata_formatters.py:177
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: src/npo/modules/images/metadata_formatters.py:178
+msgid "Average"
+msgstr "Moyenne"
+
+#: src/npo/modules/images/metadata_formatters.py:179
+msgid "Center-weighted average"
+msgstr "Moyenne pondérée-centrale"
+
+#: src/npo/modules/images/metadata_formatters.py:180
+msgid "Spot"
+msgstr "Spot"
+
+#: src/npo/modules/images/metadata_formatters.py:181
+msgid "Multi-spot"
+msgstr "Multi-sport"
+
+#: src/npo/modules/images/metadata_formatters.py:182
+msgid "Pattern"
+msgstr "Motif"
+
+#: src/npo/modules/images/metadata_formatters.py:183
+msgid "Partial"
+msgstr "Partiel"
+
+#: src/npo/modules/images/metadata_formatters.py:184
+msgid "Other"
+msgstr "Autre"
+
+#: src/npo/modules/images/metadata_formatters.py:197
+msgid "Standard"
+msgstr "Standard"
+
+#: src/npo/modules/images/metadata_formatters.py:198
+msgid "Landscape"
+msgstr "Paysage"
+
+#: src/npo/modules/images/metadata_formatters.py:199
+msgid "Portrait"
+msgstr "Portrait"
+
+#: src/npo/modules/images/metadata_formatters.py:200
+msgid "Night scene"
+msgstr "Scène de nuit"
+
+#: src/npo/modules/images/metadata_formatters.py:213
+msgid "Directly photographed"
+msgstr "Photographie directe"
+
+#: src/npo/modules/images/metadata_formatters.py:225
+msgid "sRGB"
+msgstr "sRGB"
+
+#: src/npo/modules/images/metadata_formatters.py:226
+msgid "Adobe RGB"
+msgstr "Adobe RGB"
+
+#: src/npo/modules/images/metadata_formatters.py:227
+msgid "Uncalibrated"
+msgstr "Non calibré"
 

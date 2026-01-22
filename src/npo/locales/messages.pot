@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-21 20:33+0100\n"
+"POT-Creation-Date: 2026-01-22 08:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,5 +86,176 @@ msgstr ""
 msgid ""
 "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 "
 "is supported."
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:56
+msgid "No Flash"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:60
+msgid "Flash fired"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:60
+msgid "Flash did not fire"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:65
+msgid "auto"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:67
+msgid "compulsory"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:69
+msgid "suppressed"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:72
+msgid "red-eye reduction"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:85
+msgid "Horizontal (normal)"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:86
+msgid "Mirror horizontal"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:87
+msgid "Rotate 180"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:88
+msgid "Mirror vertical"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:89
+msgid "Mirror horizontal and rotate 270 CW"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:90
+msgid "Rotate 90 CW"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:91
+msgid "Mirror horizontal and rotate 90 CW"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:92
+msgid "Rotate 270 CW"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:115
+#: src/npo/modules/images/metadata_formatters.py:150
+msgid "Auto"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:116
+#: src/npo/modules/images/metadata_formatters.py:130
+#: src/npo/modules/images/metadata_formatters.py:151
+msgid "Manual"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:129
+msgid "Not defined"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:131
+msgid "Normal program"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:132
+msgid "Aperture priority"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:133
+msgid "Shutter priority"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:134
+msgid "Creative program"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:135
+msgid "Action program"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:136
+msgid "Portrait mode"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:137
+msgid "Landscape mode"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:152
+msgid "Auto bracket"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:177
+msgid "Unknown"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:178
+msgid "Average"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:179
+msgid "Center-weighted average"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:180
+msgid "Spot"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:181
+msgid "Multi-spot"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:182
+msgid "Pattern"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:183
+msgid "Partial"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:184
+msgid "Other"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:197
+msgid "Standard"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:198
+msgid "Landscape"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:199
+msgid "Portrait"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:200
+msgid "Night scene"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:213
+msgid "Directly photographed"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:225
+msgid "sRGB"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:226
+msgid "Adobe RGB"
+msgstr ""
+
+#: src/npo/modules/images/metadata_formatters.py:227
+msgid "Uncalibrated"
 msgstr ""
 

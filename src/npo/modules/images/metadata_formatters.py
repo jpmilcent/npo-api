@@ -1,3 +1,6 @@
+from fastapi_babel import _
+
+
 class ExifFlash:
     """Constants for decoding EXIF Flash tag."""
 
@@ -50,21 +53,23 @@ class MetadataFormatter:
         try:
             val = int(float(value))
             if val == 0:
-                return "No Flash"
+                return _("No Flash")
 
             parts = []
-            parts.append("Flash fired" if val & ExifFlash.FIRED_MASK else "Flash did not fire")
+            parts.append(
+                _("Flash fired") if val & ExifFlash.FIRED_MASK else _("Flash did not fire")
+            )
 
             mode = (val >> ExifFlash.MODE_SHIFT) & ExifFlash.MODE_MASK
             if mode == ExifFlash.MODE_AUTO:
-                parts.append("auto")
+                parts.append(_("auto"))
             elif mode == ExifFlash.MODE_COMPULSORY:
-                parts.append("compulsory")
+                parts.append(_("compulsory"))
             elif mode == ExifFlash.MODE_SUPPRESSED:
-                parts.append("suppressed")
+                parts.append(_("suppressed"))
 
             if (val >> ExifFlash.RED_EYE_SHIFT) & 1:
-                parts.append("red-eye reduction")
+                parts.append(_("red-eye reduction"))
 
             return ", ".join(parts)
         except (ValueError, TypeError):
@@ -77,14 +82,14 @@ class MetadataFormatter:
         try:
             val = int(value)
             orientations = {
-                1: "Horizontal (normal)",
-                2: "Mirror horizontal",
-                3: "Rotate 180",
-                4: "Mirror vertical",
-                5: "Mirror horizontal and rotate 270 CW",
-                6: "Rotate 90 CW",
-                7: "Mirror horizontal and rotate 90 CW",
-                8: "Rotate 270 CW",
+                1: _("Horizontal (normal)"),
+                2: _("Mirror horizontal"),
+                3: _("Rotate 180"),
+                4: _("Mirror vertical"),
+                5: _("Mirror horizontal and rotate 270 CW"),
+                6: _("Rotate 90 CW"),
+                7: _("Mirror horizontal and rotate 90 CW"),
+                8: _("Rotate 270 CW"),
             }
             return orientations.get(val, str(val))
         except (ValueError, TypeError):
@@ -107,8 +112,8 @@ class MetadataFormatter:
         try:
             val = int(value)
             modes = {
-                0: "Auto",
-                1: "Manual",
+                0: _("Auto"),
+                1: _("Manual"),
             }
             return modes.get(val, str(val))
         except (ValueError, TypeError):
@@ -121,15 +126,15 @@ class MetadataFormatter:
         try:
             val = int(value)
             programs = {
-                0: "Not defined",
-                1: "Manual",
-                2: "Normal program",
-                3: "Aperture priority",
-                4: "Shutter priority",
-                5: "Creative program",
-                6: "Action program",
-                7: "Portrait mode",
-                8: "Landscape mode",
+                0: _("Not defined"),
+                1: _("Manual"),
+                2: _("Normal program"),
+                3: _("Aperture priority"),
+                4: _("Shutter priority"),
+                5: _("Creative program"),
+                6: _("Action program"),
+                7: _("Portrait mode"),
+                8: _("Landscape mode"),
             }
             return programs.get(val, str(val))
         except (ValueError, TypeError):
@@ -142,9 +147,9 @@ class MetadataFormatter:
         try:
             val = int(value)
             modes = {
-                0: "Auto",
-                1: "Manual",
-                2: "Auto bracket",
+                0: _("Auto"),
+                1: _("Manual"),
+                2: _("Auto bracket"),
             }
             return modes.get(val, str(val))
         except (ValueError, TypeError):
@@ -169,14 +174,14 @@ class MetadataFormatter:
         try:
             val = int(value)
             modes = {
-                0: "Unknown",
-                1: "Average",
-                2: "Center-weighted average",
-                3: "Spot",
-                4: "Multi-spot",
-                5: "Pattern",
-                6: "Partial",
-                255: "Other",
+                0: _("Unknown"),
+                1: _("Average"),
+                2: _("Center-weighted average"),
+                3: _("Spot"),
+                4: _("Multi-spot"),
+                5: _("Pattern"),
+                6: _("Partial"),
+                255: _("Other"),
             }
             return modes.get(val, str(val))
         except (ValueError, TypeError):
@@ -189,10 +194,10 @@ class MetadataFormatter:
         try:
             val = int(value)
             types = {
-                0: "Standard",
-                1: "Landscape",
-                2: "Portrait",
-                3: "Night scene",
+                0: _("Standard"),
+                1: _("Landscape"),
+                2: _("Portrait"),
+                3: _("Night scene"),
             }
             return types.get(val, str(val))
         except (ValueError, TypeError):
@@ -205,7 +210,7 @@ class MetadataFormatter:
         try:
             val = int(value)
             if val == 1:
-                return "Directly photographed"
+                return _("Directly photographed")
             return str(val)
         except (ValueError, TypeError):
             return str(value)
@@ -217,9 +222,9 @@ class MetadataFormatter:
         try:
             val = int(value)
             spaces = {
-                1: "sRGB",
-                2: "Adobe RGB",
-                65535: "Uncalibrated",
+                1: _("sRGB"),
+                2: _("Adobe RGB"),
+                65535: _("Uncalibrated"),
             }
             return spaces.get(val, str(val))
         except (ValueError, TypeError):
