@@ -58,3 +58,52 @@ def test_format_msg_invalid_length():
     ):
         # pixel_hash requires 32 chars, providing only 5
         ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash="12345")
+
+
+def test_format_msg_extra_argument():
+    """
+    Test that providing extra arguments does not raise an error.
+    """
+    msg = ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash="a" * 32, extra_arg="extra_value")
+    assert msg == f"Image {'a' * 32} not found."
+
+
+def test_format_msg_multiple_missing_arguments():
+    """
+    Test that ValueError is raised when multiple required arguments are missing.
+    """
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Missing required arguments for error DUPLICATE_PERCEPTUAL_HASH: "
+            r"filename, perceptual_hash"
+        ),
+    ):
+        ErrorCode.DUPLICATE_PERCEPTUAL_HASH.formatMsg()
+
+
+def test_format_msg_none_argument():
+    """
+    Test that ValueError is raised when an argument is None.
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Missing required arguments for error IMAGE_NOT_FOUND: pixel_hash"),
+    ):
+        # Providing None should fail validation
+        ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=None)
+
+
+def test_format_msg_whitespace_argument():
+    """
+    Test that ValueError is raised when an argument is only whitespace.
+    """
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"(?s)Invalid arguments for error IMAGE_NOT_FOUND.*"
+            r"String should have at least 32 characters"
+        ),
+    ):
+        # Providing whitespace should fail validation
+        ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash="   ")
