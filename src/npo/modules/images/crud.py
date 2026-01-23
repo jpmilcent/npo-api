@@ -5,7 +5,7 @@ from npo.modules.images.models import Image as ImageStorage
 
 
 async def get_image_by_file_hash(file_hash: str, db: AsyncSession) -> ImageStorage | None:
-    stmt = select(ImageStorage).filter(ImageStorage.hash.ilike(f"{file_hash}%"))
+    stmt = select(ImageStorage).filter(ImageStorage.file_hash.ilike(f"{file_hash}%"))
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 

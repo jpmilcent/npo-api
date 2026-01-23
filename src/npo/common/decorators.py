@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import APIRouter, status
 
 from npo.core.schemas import ErrorDetail
+
+logger = logging.getLogger(__name__)
 
 
 class NpoApiRoute:
@@ -33,6 +37,7 @@ class NpoApiRoute:
         **kwargs,
     ):
         if method.upper() not in self.VALID_HTTP_METHODS:
+            logger.error(f"Invalid HTTP method attempted: {method}")
             raise ValueError(
                 f"Invalid HTTP method: {method}. Must be one of {self.VALID_HTTP_METHODS}"
             )

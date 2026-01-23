@@ -39,7 +39,7 @@ class BackendSettings(CommonSettings):
             raise ValueError("Log level must be DEBUG, INFO, WARNING, ERROR or CRITICAL")
         return v.upper()
 
-    @field_validator("log_max_bytes", "max_upload_size", mode="before")
+    @field_validator("log_max_bytes", "upload_safety_buffer", "max_upload_size", mode="before")
     @classmethod
     def parse_human_readable_size(cls, v: str | int) -> int:
         if isinstance(v, int):

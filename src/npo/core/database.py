@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import AsyncGenerator
 from datetime import datetime
 
 from alembic import command
@@ -34,7 +35,7 @@ async def init_db():
     await loop.run_in_executor(None, lambda: command.upgrade(alembic_cfg, "head"))
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
