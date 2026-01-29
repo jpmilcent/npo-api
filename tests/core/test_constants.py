@@ -38,7 +38,7 @@ def test_format_msg_empty_argument():
         ValueError,
         match=(
             r"(?s)Invalid arguments for error IMAGE_NOT_FOUND.*"
-            r"String should have at least 32 characters"
+            r"String should have at least 8 characters"
         ),
     ):
         # Providing an empty string should fail validation
@@ -53,10 +53,10 @@ def test_format_msg_invalid_length():
         ValueError,
         match=(
             r"(?s)Invalid arguments for error IMAGE_NOT_FOUND.*"
-            r"String should have at least 32 characters"
+            r"String should have at least 8 characters"
         ),
     ):
-        # pixel_hash requires 32 chars, providing only 5
+        # pixel_hash requires 8 chars, providing only 5
         ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash="12345")
 
 
@@ -102,7 +102,7 @@ def test_format_msg_whitespace_argument():
         ValueError,
         match=(
             r"(?s)Invalid arguments for error IMAGE_NOT_FOUND.*"
-            r"String should have at least 32 characters"
+            r"String should have at least 8 characters"
         ),
     ):
         # Providing whitespace should fail validation

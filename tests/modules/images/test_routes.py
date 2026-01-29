@@ -7,6 +7,9 @@ from fastapi import status
 from tests.constants import (
     ERROR_DUPLICATE_PERCEPTUAL_HASH,
     ERROR_IMAGE_NOT_FOUND,
+    ERROR_IMAGES_WEBSERVICE_NOT_FOUND,
+    ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
+    ERROR_RAW_METADATA_NOT_FOUND,
     IMAGE_01_JPG,
     IMAGE_02_JPG,
     IMAGE_03_DNG,
@@ -17,6 +20,43 @@ from tests.constants import (
 )
 
 from npo.core import config
+from npo.modules.images.crud import get_images_list
+
+
+async def test_root(override_db_session, client):
+    """
+    Test the root endpoint.
+    """
+    _, initial_total = await get_images_list(override_db_session, limit=1)
+
+    response = await client.get("/images/")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert all(k in data for k in ("meta", "data"))
+
+    ITEMS_PER_PAGE_DEFAULT = 100
+    TOTAL_ITEMS_DEFAULT = initial_total
+    TOTAL_PAGES_DEFAULT = (initial_total + ITEMS_PER_PAGE_DEFAULT - 1) // ITEMS_PER_PAGE_DEFAULT
+    CURRENT_PAGE_DEFAULT = 1
+
+    DATA_DEFAULT = []
+
+    assert "pagination" in data["meta"]
+    pagination = data["meta"]["pagination"]
+    assert all(
+        k in pagination for k in ("total_items", "total_pages", "current_page", "items_per_page")
+    )
+    assert pagination["total_items"] == TOTAL_ITEMS_DEFAULT
+    assert pagination["total_pages"] == TOTAL_PAGES_DEFAULT
+    assert pagination["current_page"] == CURRENT_PAGE_DEFAULT
+    assert pagination["items_per_page"] == ITEMS_PER_PAGE_DEFAULT
+
+    assert (
+        data["data"] == DATA_DEFAULT
+        if TOTAL_ITEMS_DEFAULT == 0
+        else len(data["data"]) <= ITEMS_PER_PAGE_DEFAULT
+    )
 
 
 async def test_upload_image(large_file_cache, upload_image):
@@ -391,3 +431,61 @@ async def test_distinct_pixel_hash_for_raw(upload_image):
     pixel_hash_2 = await upload_image(raw2)
 
     assert pixel_hash_1 != pixel_hash_2
+
+
+async def test_metadata(client, large_file_cache, upload_image):
+    """Test the metadata endpoint."""
+
+    image_name = IMAGE_01_JPG
+    image_path = large_file_cache / image_name
+
+    uploaded_file_hash = await upload_image(image_name)
+
+    response = await client.get(f"/images/{uploaded_file_hash}/metadata")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.headers["content-type"] == "application/json"
+    meta_data = response.json()
+
+    # Cross-validation: use exiftool locally on the source file
+    # to verify that the API returns the same values.
+    with exiftool.ExifToolHelper() as et:
+        local_metadata = et.get_metadata(str(image_path))[0]
+
+    # Comparison of critical fields (MIME, Dimensions) only to avoid some fields that may vary.
+    # This ensures that the API correctly extracts real data from the file.
+    for key in ["File:MIMEType", "File:ImageWidth", "File:ImageHeight"]:
+        if key in local_metadata:
+            assert meta_data[key] == local_metadata[key]
+
+
+async def test_raw_metadata_not_found(verify_404):
+    """Test the raw metadata endpoint for 404 response."""
+
+    pixel_hash = "abcdef1234567890abcdef1234567890"
+    await verify_404(
+        f"/images/{pixel_hash}/metadata",
+        ERROR_RAW_METADATA_NOT_FOUND,
+        f"Raw metadata for file {pixel_hash} not found.",
+    )
+
+
+async def test_photography_metadata_not_found(verify_404):
+    """Test the photography metadata endpoint for 404 response."""
+
+    pixel_hash = "abcdef1234567890abcdef1234567890"
+    await verify_404(
+        f"/images/{pixel_hash}/metadata/photography",
+        ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
+        f"Photography metadata for file {pixel_hash} not found.",
+    )
+
+
+async def test_images_catch_all(verify_404):
+    """Test the images catch-all endpoint for 404 response."""
+
+    unknown_path = "some/random/path"
+    await verify_404(
+        f"/images/{unknown_path}",
+        ERROR_IMAGES_WEBSERVICE_NOT_FOUND,
+        f"Webservice /images/{unknown_path} requested not found.",
+    )
