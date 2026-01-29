@@ -27,12 +27,12 @@ async def get_image_by_perceptual_hash(
 async def get_image_by_image_unique_id(
     image_unique_id: str | None, db: AsyncSession
 ) -> ImageStorage | None:
-    file = None
+    image = None
     if image_unique_id is not None:
         stmt = select(ImageStorage).filter_by(image_unique_id=image_unique_id)
         result = await db.execute(stmt)
-        file = result.scalar_one_or_none()
-    return file
+        image = result.scalar_one_or_none()
+    return image
 
 
 async def get_images_list(db: AsyncSession, skip: int = 0, limit: int = 100):

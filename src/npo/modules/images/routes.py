@@ -154,6 +154,14 @@ async def get_image_tile(
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     if file_storage:
         image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
+        if image_bytes is None:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=ErrorCode.IMAGE_DZI_NOT_FOUND,
+                message=ErrorCode.IMAGE_DZI_NOT_FOUND.formatMsg(
+                    pixel_hash=pixel_hash, zoom=zoom, x=x, y=y
+                ),
+            )
         return Response(content=image_bytes, media_type="image/jpeg")
     else:
         raise APIException(

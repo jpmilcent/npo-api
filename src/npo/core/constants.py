@@ -15,10 +15,13 @@ N_ = gettext_noop
 class ErrorArguments(BaseModel):
     filename: str | None = Field(default=None, min_length=1)
     perceptual_hash: str | None = Field(default=None, min_length=16)
-    pixel_hash: str | None = Field(default=None, min_length=32)
+    pixel_hash: str | None = Field(default=None, min_length=8)
     path: str | None = Field(default=None, min_length=1)
     gps_datum: str | None = Field(default=None)
     image_unique_id: str | None = Field(default=None)
+    zoom: int | None = Field(default=None, ge=0)
+    x: int | None = Field(default=None, ge=0)
+    y: int | None = Field(default=None, ge=0)
 
     model_config = {"extra": "allow"}
 
@@ -37,6 +40,10 @@ class ErrorCode(StrEnum):
     FILE_UPLOAD_ERROR = ("FILE_UPLOAD_ERROR", N_("There was an error uploading the file."))
     IMAGE_DECODING_ERROR = ("IMAGE_DECODING_ERROR", N_("Unable to decode image file {filename}."))
     IMAGE_NOT_FOUND = ("IMAGE_NOT_FOUND", N_("Image {pixel_hash} not found."))
+    IMAGE_DZI_NOT_FOUND = (
+        "IMAGE_DZI_NOT_FOUND",
+        N_("DZI tile for image {pixel_hash} tile {zoom}/{x}/{y} not found."),
+    )
     IMAGE_PROCESSING_ERROR = (
         "IMAGE_PROCESSING_ERROR",
         N_("Unable to process image file {filename} for perceptual hashing."),
@@ -89,6 +96,9 @@ class ErrorCode(StrEnum):
         path: str | None = None,
         gps_datum: str | None = None,
         image_unique_id: str | None = None,
+        zoom: int | None = None,
+        x: int | None = None,
+        y: int | None = None,
         **kwargs,
     ) -> str:
         try:
@@ -99,6 +109,9 @@ class ErrorCode(StrEnum):
                 path=path,
                 gps_datum=gps_datum,
                 image_unique_id=image_unique_id,
+                zoom=zoom,
+                x=x,
+                y=y,
                 **kwargs,
             )
         except ValidationError as e:
@@ -106,7 +119,7 @@ class ErrorCode(StrEnum):
 
         args = params.model_dump(exclude_none=True)
         required_fields = [fname for _, fname, _, _ in Formatter().parse(self.message) if fname]
-        missing = [field for field in required_fields if not args.get(field)]
+        missing = [field for field in required_fields if args.get(field) is None]
         if missing:
             raise ValueError(
                 f"Missing required arguments for error {self.name}: {', '.join(missing)}"
