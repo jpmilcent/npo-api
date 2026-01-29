@@ -1,8 +1,8 @@
-# nature-photo-organizer API
+# 🌿 nature-photo-organizer API
 
 ⚠️ **This project is currently a sandbox**
 
-## Development
+## 🛠️ Development
 
 **Note**: Operational guidance for AI agents and contributor workflows is in [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
@@ -11,7 +11,7 @@ We use:
 - [Ruff](https://docs.astral.sh/ruff/) to lint and format code
 - [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
 
-### Installation and Usage
+### 🚀 Installation and Usage
 
 Check that you have Exiftool installed on your system:
 
@@ -62,7 +62,7 @@ The API documentation can be found in two variants :
 - [Swagger UI](http://127.0.0.1:8000/docs)
 - [Redoc](http://127.0.0.1:8000/redoc)
 
-### Postgresql database
+### 🐘 Postgresql database
 
 By default, we use SQLite, but you can use PostgreSQL. You will need to add a new user and create a new database. Here are the steps to follow:
 
@@ -86,7 +86,7 @@ The database content is installed by default when FastAPI app is launch if it do
 NPO_DATABASE_URI="postgresql+asyncpg://<user-name>:<user-password>@localhost:5432/<new-database-name>"
 ```
 
-### Tests
+### 🧪 Tests
 
 By default all tests use an SQLite database in memory. But you can use a PostgreSQL database.
 For that, you need to create a file `.env.test` base on `.env.test.sample` and edit the
@@ -99,16 +99,16 @@ The first time, a fixture automatically downloads these files (mostly RAW and DN
 
 By default, pytest shows durations for the 5 longest tests. Use `uv run pytest --durations=0` to show all test durations.
 
-#### Tests coverage
+#### 📊 Tests coverage
 
 To update the coverage report use: `uv run pytest --cov --cov-report=html`
 To view the report in your browser, open the _index.html_ file in the `htmlcov` directory.
 
-### Update version
+### 🆙 Update version
 
 To force update of file `version.py` use: `uv run -m setuptools_scm --force-write-version-files`
 
-### Internationalization
+### 🌐 Internationalization
 
 We use `pybabel` to manage translations.
 
