@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from fastapi import APIRouter, status
 
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class NpoApiRoute:
-    COMMON_RESPONSES = {
+    COMMON_RESPONSES: typing.ClassVar[dict] = {
         status.HTTP_400_BAD_REQUEST: {
             "model": ErrorDetail,
             "description": "Bad Request",
@@ -23,7 +24,7 @@ class NpoApiRoute:
         },
     }
 
-    VALID_HTTP_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
+    VALID_HTTP_METHODS: typing.ClassVar[set] = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def __init__(self, router: APIRouter):
         self.router = router
@@ -32,8 +33,8 @@ class NpoApiRoute:
         self,
         path: str,
         method: str = "GET",
-        responses: dict = None,
-        override_404: dict = None,
+        responses: dict | None = None,
+        override_404: dict | None = None,
         **kwargs,
     ):
         if method.upper() not in self.VALID_HTTP_METHODS:

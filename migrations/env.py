@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from npo.core import database  # noqa: E402
+from npo.core import database
 from npo.core.config import settings
 
 # Alembic Config object, which provides access to the values within the pyproject.toml file in use.

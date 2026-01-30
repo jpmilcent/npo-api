@@ -90,30 +90,10 @@ class ErrorCode(StrEnum):
 
     def formatMsg(
         self,
-        filename: str | None = None,
-        perceptual_hash: str | None = None,
-        pixel_hash: str | None = None,
-        path: str | None = None,
-        gps_datum: str | None = None,
-        image_unique_id: str | None = None,
-        zoom: int | None = None,
-        x: int | None = None,
-        y: int | None = None,
         **kwargs,
     ) -> str:
         try:
-            params = ErrorArguments(
-                filename=filename,
-                perceptual_hash=perceptual_hash,
-                pixel_hash=pixel_hash,
-                path=path,
-                gps_datum=gps_datum,
-                image_unique_id=image_unique_id,
-                zoom=zoom,
-                x=x,
-                y=y,
-                **kwargs,
-            )
+            params = ErrorArguments(**kwargs)
         except ValidationError as e:
             raise ValueError(f"Invalid arguments for error {self.name}: {e}") from e
 
