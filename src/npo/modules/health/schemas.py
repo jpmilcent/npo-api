@@ -9,7 +9,6 @@ class HealthCheck(BaseModel):
     upload_directory: str | None = None
 
 
-
 class HealthPing(BaseModel):
     """Response model to ping endpoint."""
 
