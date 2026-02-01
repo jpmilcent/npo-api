@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
-from fastapi import Response, status
+from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from tests.constants import EXTERNAL_FILES
@@ -279,8 +279,8 @@ def verify_404(client, verify_404_response):
 
 @pytest.fixture()
 def verify_404_response():
-    async def _verify(response: Response, expected_code: str, expected_message: str):
-        assert isinstance(response, Response)
+    def _verify(response: httpx.Response, expected_code: str, expected_message: str):
+        assert isinstance(response, httpx.Response)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.headers["content-type"] == "application/json"
         data = response.json()

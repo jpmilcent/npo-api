@@ -53,7 +53,7 @@ async def get_images_list(db: AsyncSession, skip: int = 0, limit: int = 100):
             ImageStorage.created_at,
             ImageStorage.updated_at,
         )
-        .order_by(ImageStorage.created_at.desc())
+        .order_by(ImageStorage.created_at.desc(), ImageStorage.id.desc())
         .offset(skip)
         .limit(limit)
     )

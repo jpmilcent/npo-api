@@ -5,7 +5,6 @@ from datetime import datetime
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import Integer
-from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
     AsyncSession,
@@ -22,11 +21,7 @@ from sqlalchemy.sql import functions as func
 
 from npo.core import config
 
-db_uri = config.settings.database_uri
-
-url = make_url(db_uri)
-
-engine = create_async_engine(db_uri, echo=True, future=True)
+engine = create_async_engine(config.settings.database_uri, echo=True, future=True)
 
 
 async def init_db():
@@ -40,8 +35,9 @@ async def init_db():
 
 
 async def get_session() -> AsyncGenerator[AsyncSession]:
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    async with async_session() as session:
+    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with async_session_factory() as session:
         yield session
 
 

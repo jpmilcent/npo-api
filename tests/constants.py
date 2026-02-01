@@ -1,5 +1,5 @@
 # URLs
-EXTERNAL_FILES_DIR = "https://github.com/jpmilcent/npo-api/releases/download/v0.0.1-alpha"
+EXTERNAL_FILES_DIR = "https://github.com/jpmilcent/npo-api/releases/download/v0.1.0-alpha"
 
 # Filenames
 IMAGE_01_JPG = "image_01.jpg"

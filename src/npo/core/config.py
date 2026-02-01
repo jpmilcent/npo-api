@@ -17,7 +17,7 @@ class CommonSettings(BaseSettings):
 class BackendSettings(CommonSettings):
     """Backend application settings."""
 
-    database_uri: str = ""
+    database_uri: str = "sqlite+aiosqlite:///npo.db"
     admin_email: str = ""
     uploads_dir: str = ""
     storage_dir: str = ""
