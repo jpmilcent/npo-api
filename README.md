@@ -10,6 +10,10 @@ We use:
 - [uv](https://docs.astral.sh/uv/) to manage the project
 - [Ruff](https://docs.astral.sh/ruff/) to lint and format code
 - [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
+- [![Pyright Badge](https://img.shields.io/badge/Pyright-basic-296896?logo=microsoft&logoColor=fff&style=plastic)](https://github.com/microsoft/pyright) for static type checking
+- [![pip-audit Badge](https://img.shields.io/badge/pip--audit-3775A9?logo=pypi&logoColor=fff&style=plastic)](https://pypi.org/project/pip-audit/) to audit dependencies for known vulnerabilities
+- [![pre-commit Badge](https://img.shields.io/badge/pre--commit-FAB040?logo=precommit&logoColor=fff&style=plastic)](https://github.com/pre-commit/pre-commit) with [Gitleaks](https://github.com/gitleaks/gitleaks), [Gitlint](https://github.com/jorisroovers/gitlint/wiki/Pre-commit-notes) and [Ruff](https://github.com/astral-sh/ruff-pre-commit) to check Git commit content and [![Conventional Commits Badge](https://img.shields.io/badge/Conventional%20Commits-FE5196?logo=conventionalcommits&logoColor=fff&style=plastic)](https://www.conventionalcommits.org/en/v1.0.0/) message
+- [![SemVer Badge](https://img.shields.io/badge/SemVer-3F4551?logo=semver&logoColor=fff&style=plastic)](https://semver.org/) Semantic Versioning for Git tags and releases
 
 ### 🚀 Installation and Usage
 
@@ -84,6 +88,68 @@ The database content is installed by default when FastAPI app is launch if it do
 
 ```properties
 NPO_DATABASE_URI="postgresql+asyncpg://<user-name>:<user-password>@localhost:5432/<new-database-name>"
+```
+
+### 🛡️ Pre-commit (Git hooks) installation
+
+Install this tools :
+- [Pipx](https://github.com/pypa/pipx?tab=readme-ov-file#on-linux)
+- [Pre-commit](https://pre-commit.com/index.html#install)
+- [Gitleaks](https://github.com/gitleaks/gitleaks?tab=readme-ov-file#installing)
+- [Gitlint](https://jorisroovers.com/gitlint/latest/installation/)
+- [Ruff](https://github.com/astral-sh/ruff?tab=readme-ov-file#installation)
+- [BasedPyright](https://docs.basedpyright.com/v1.31.1/installation/pre-commit%20hook/)
+- [Pip-audit](https://pypi.org/project/pip-audit/)
+
+Installation steps for *Debian 13*:
+```bash
+# Debian packages
+sudo apt update
+sudo apt install pipx golang
+# Enable pipx
+pipx ensurepath
+# Install Python packages with Pipx
+pipx install pre-commit gitlint ruff
+# Creation of necessary local directories
+mkdir ~/Applications ~/bin
+# Install gitleaks
+cd Applications
+git clone https://github.com/gitleaks/gitleaks.git
+cd gitleaks
+make build
+cd ~/bin
+ln -s ~/Applications/gitleaks/gitleaks gitleaks
+source ~/.bashrc
+# Check install
+gitleaks --version
+gitlint --version
+ruff --version
+# Install Pre-commit in your repository (Ex.: ~/workspace/npo-api)
+cd ~/workspace/npo-api
+pre-commit install
+```
+
+After this installation, the 3 tools will be launch at each commit.
+
+
+#### Gitleaks, Gitlint, Ruff, BasedPyright and Pip-audit manual usage
+
+They can also be used manually to check the project.
+
+To launch them manually from the root directory of this project, use:
+```bash
+gitleaks git .
+gitlint --commits HEAD
+# Check only Python files
+ruff check .
+# Fix issues automatically
+ruff check . --fix
+# Check type checking with BasedPyright
+uv run basedpyright
+# Or for a specific file
+uv run basedpyright src/npo/main.py
+# Security audit of dependencies
+uv run pip-audit .
 ```
 
 ### 🧪 Tests

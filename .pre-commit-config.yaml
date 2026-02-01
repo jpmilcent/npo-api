@@ -25,3 +25,16 @@ repos:
       - id: gitlint
         name: "Gitlint: check commit message"
         stages: [commit-msg]
+  - repo: https://github.com/DetachHead/basedpyright-pre-commit-mirror
+    rev: 1.37.2
+    hooks:
+      - id: basedpyright
+        name: "BasedPyright: type checking"
+        stages: [pre-commit]
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.10.0
+    hooks:
+      - id: pip-audit
+        name: "pip-audit: security audit"
+        stages: [pre-commit]
+        args: ["--skip-editable"]
