@@ -39,8 +39,6 @@ jobs:
 
       - name: Run pip-audit
         uses: pypa/gh-action-pip-audit@v1.1.0
-        with:
-          ignore-pkgs: "npo"
 
       - name: Detect secrets (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
