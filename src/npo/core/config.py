@@ -17,10 +17,10 @@ class CommonSettings(BaseSettings):
 class BackendSettings(CommonSettings):
     """Backend application settings."""
 
-    database_uri: str
-    admin_email: str
-    uploads_dir: str
-    storage_dir: str
+    database_uri: str = ""
+    admin_email: str = ""
+    uploads_dir: str = ""
+    storage_dir: str = ""
     log_level: str = "INFO"
     logs_dir: str = "logs"
     log_max_bytes: int = 10 * 1024 * 1024  # 10 MB

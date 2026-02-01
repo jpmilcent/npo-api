@@ -153,7 +153,7 @@ async def get_image_tile(
 ):
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     if file_storage:
-        image_bytes: bytes = await get_tile_from_dzi(file_storage, zoom, x, y)
+        image_bytes: bytes | None = await get_tile_from_dzi(file_storage, zoom, x, y)
         if image_bytes is None:
             raise APIException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -181,7 +181,13 @@ async def get_image_tile(
 async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
     file = await get_image_by_pixel_hash(pixel_hash, db)
     if file:
-        image_bytes: bytes = await get_image(file)
+        image_bytes: bytes | None = await get_image(file)
+        if image_bytes is None:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=ErrorCode.IMAGE_NOT_FOUND,
+                message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            )
         media_type = file.mime if is_web_format(file) else "image/jpeg"
         return Response(content=image_bytes, media_type=media_type)
     else:

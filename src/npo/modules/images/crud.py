@@ -38,6 +38,7 @@ async def get_image_by_image_unique_id(
 async def get_images_list(db: AsyncSession, skip: int = 0, limit: int = 100):
     stmt_count = select(func.count()).select_from(ImageStorage)
     total = await db.scalar(stmt_count)
+    total = total if total is not None else 0
 
     stmt = (
         select(

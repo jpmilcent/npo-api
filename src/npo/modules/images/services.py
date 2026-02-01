@@ -40,10 +40,11 @@ logger = logging.getLogger(__name__)
 
 async def build_image_infos(upload_file: UploadFile) -> Image:
     mime_type = await extract_mime_type(upload_file)
+    file_name = upload_file.filename if upload_file.filename else "unknown"
 
     return Image(
-        name=upload_file.filename,
-        path=os.path.join(config.settings.uploads_dir, upload_file.filename),
+        name=file_name,
+        path=os.path.join(config.settings.uploads_dir, file_name),
         size=upload_file.size,
         mime=mime_type,
     )
@@ -55,7 +56,7 @@ async def extract_mime_type(file: UploadFile) -> str:
 
     # Since DNG is often interpreted as TIFF, magic function may return "image/tiff".
     # We correct this if extension is explicit.fix
-    if mime_type == "image/tiff" and file.filename.lower().endswith(".dng"):
+    if mime_type == "image/tiff" and file.filename and file.filename.lower().endswith(".dng"):
         logger.info(
             f"Correcting MIME type for {file.filename} from {mime_type} to image/x-adobe-dng"
         )
@@ -168,7 +169,6 @@ def _compute_pixel_hash_sync(image: Image, preview_bytes: bytes | None = None) -
 
     # Process image in chunks using crop() which supports sequential streaming
     chunk_height = 512
-
     for y in range(0, img.height, chunk_height):
         height_to_process = min(chunk_height, img.height - y)
         data = img.crop(0, y, img.width, height_to_process).write_to_memory()
@@ -228,14 +228,14 @@ def _compute_perceptual_hash_sync(path: str | None, data: bytes | None) -> str:
     return f"{hash_val:016x}"
 
 
-def is_web_format(image: Image) -> bool:
-    is_web_format = (image.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
-        image.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
+def is_web_format(image: Image | ImageStorage) -> bool:
+    web_format = (image.mime in ["image/jpeg", "image/png", "image/gif", "image/webp"]) or (
+        image.name and image.name.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
     )
-    return is_web_format
+    return web_format if (web_format is not None and web_format != "") else False
 
 
-async def extract_jpeg_preview(image: Image) -> bytes | None:
+async def extract_jpeg_preview(image: Image | ImageStorage) -> bytes | None:
     preview_bytes = None
     # On essaie d'abord PreviewImage, puis JpgFromRaw si le premier échoue
     for tag in ["-PreviewImage", "-JpgFromRaw"]:
@@ -306,7 +306,7 @@ async def move_file(image: Image) -> None:
     logging.info(f"File {image.name} moved to {storage_path}")
 
 
-async def get_file_extension(image: Image) -> str:
+async def get_file_extension(image: Image | ImageStorage) -> str:
     if not image.mime:
         return ""
     extension = mimetypes.guess_extension(image.mime)

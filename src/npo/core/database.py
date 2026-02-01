@@ -6,13 +6,17 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import Integer
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     declared_attr,
     mapped_column,
-    sessionmaker,
 )
 from sqlalchemy.sql import functions as func
 
@@ -36,7 +40,7 @@ async def init_db():
 
 
 async def get_session() -> AsyncGenerator[AsyncSession]:
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         yield session
 

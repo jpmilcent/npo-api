@@ -82,7 +82,7 @@ class JSONFormatter(logging.Formatter):
         }
         # Add extra fields if available (passed via extra={...})
         if hasattr(record, "extra_data"):
-            log_record.update(record.extra_data)
+            log_record.update(getattr(record, "extra_data"))  # noqa: B009
 
         return json.dumps(log_record)
 

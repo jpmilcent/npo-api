@@ -44,7 +44,7 @@ class MetadataFormatter:
                 return f"1/{round(1 / val)}"
             return str(int(val)) if val.is_integer() else str(val)
         except (ValueError, TypeError):
-            return value
+            return str(value)
 
     @staticmethod
     def format_flash(value: float | str | int | None) -> str | None:

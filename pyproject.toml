@@ -33,9 +33,10 @@ dependencies = [
   "pyexiftool>=0.5.6",
   "python-dotenv>=1.2.1",
   "python-magic>=0.4.27",
-  "python-multipart>=0.0.21",
+  "python-multipart>=0.0.22",
   "pyvips[binary]>=3.1.1",
   "sqlalchemy>=2.0.45",
+  "urllib3>=2.6.3", # Force the security fix CVE-2026-21441
 ]
 
 [dependency-groups]

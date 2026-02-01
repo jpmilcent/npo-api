@@ -28,6 +28,8 @@ class ErrorArguments(BaseModel):
 
 # Error Codes
 class ErrorCode(StrEnum):
+    message: str
+
     DUPLICATE_PERCEPTUAL_HASH = (
         "DUPLICATE_PERCEPTUAL_HASH",
         N_("Image {filename} with perceptual hash {perceptual_hash} already exists."),

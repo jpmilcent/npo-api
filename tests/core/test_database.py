@@ -32,7 +32,7 @@ async def test_get_session():
     """
     Test that get_session yields a database session and closes it correctly.
     """
-    with patch("npo.core.database.sessionmaker") as mock_sessionmaker:
+    with patch("npo.core.database.async_sessionmaker") as mock_sessionmaker:
         # Setup the mock session object
         mock_session = AsyncMock(spec=AsyncSession)
         # Configure it as an async context manager (__aenter__ / __aexit__)
