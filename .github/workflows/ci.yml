@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  quality:
+    name: Quality & Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important pour l'historique Gitleaks
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Lint code (Ruff)
+        run: uv run ruff check . --output-format=github
+
+      - name: Check formatting (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Type checking (BasedPyright)
+        run: uv run basedpyright
+
+      - name: Run pip-audit
+        uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          ignore-pkgs: "npo"
+
+      - name: Detect secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run tests with coverage check
+        # --cov-fail-under=95 force job to failed if coverage is < 90%
+        # Add --cov-repoort=html for human report and --junitxml for tests badge
+        run: uv run pytest --cov --cov-report=xml --cov-report=html --junitxml=junit.xml --cov-fail-under=90
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            junit.xml
+            htmlcov/
+          retention-days: 1
+
+  badge:
+    name: Generate Coverage Badge
+    needs: tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Generate Coverage Badge
+        run: uv run --with genbadge[coverage] genbadge coverage -i coverage.xml -o docs/coverage.svg
+
+      - name: Generate Tests Badge
+        run: uv run --with genbadge[tests] genbadge tests -i junit.xml -o docs/tests.svg
+
+      - name: Commit badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update badges [skip ci]"
+          file_pattern: docs/*.svg
