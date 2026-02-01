@@ -2,18 +2,23 @@
 
 ⚠️ **This project is currently a sandbox**
 
+[![Tests Badge](./docs/tests.svg)](./docs/tests.svg)
+[![Coverage Badge](./docs/coverage.svg)](./docs/coverage.svg)
+
+
 ## 🛠️ Development
 
 **Note**: Operational guidance for AI agents and contributor workflows is in [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
 We use:
-- [uv](https://docs.astral.sh/uv/) to manage the project
-- [Ruff](https://docs.astral.sh/ruff/) to lint and format code
-- [Fastapi](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
+- [![uv Badge](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=fff&style=plastic)](https://docs.astral.sh/uv/) to manage the project
+- [![Ruff Badge](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=000&style=plastic)](https://docs.astral.sh/ruff/) to lint and format code
 - [![Pyright Badge](https://img.shields.io/badge/Pyright-basic-296896?logo=microsoft&logoColor=fff&style=plastic)](https://github.com/microsoft/pyright) for static type checking
 - [![pip-audit Badge](https://img.shields.io/badge/pip--audit-3775A9?logo=pypi&logoColor=fff&style=plastic)](https://pypi.org/project/pip-audit/) to audit dependencies for known vulnerabilities
+- [![FastAPI Badge](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=fff&style=plastic)](https://fastapi.tiangolo.com/learn/) as microframework to build this REST API
 - [![pre-commit Badge](https://img.shields.io/badge/pre--commit-FAB040?logo=precommit&logoColor=fff&style=plastic)](https://github.com/pre-commit/pre-commit) with [Gitleaks](https://github.com/gitleaks/gitleaks), [Gitlint](https://github.com/jorisroovers/gitlint/wiki/Pre-commit-notes) and [Ruff](https://github.com/astral-sh/ruff-pre-commit) to check Git commit content and [![Conventional Commits Badge](https://img.shields.io/badge/Conventional%20Commits-FE5196?logo=conventionalcommits&logoColor=fff&style=plastic)](https://www.conventionalcommits.org/en/v1.0.0/) message
 - [![SemVer Badge](https://img.shields.io/badge/SemVer-3F4551?logo=semver&logoColor=fff&style=plastic)](https://semver.org/) Semantic Versioning for Git tags and releases
+
 
 ### 🚀 Installation and Usage
 
