@@ -237,11 +237,11 @@ def is_web_format(image: Image | ImageStorage) -> bool:
 
 async def extract_jpeg_preview(image: Image | ImageStorage) -> bytes | None:
     preview_bytes = None
-    # On essaie d'abord PreviewImage, puis JpgFromRaw si le premier échoue
+    # First try PreviewImage, then JpgFromRaw if the first one fails
     for tag in ["-PreviewImage", "-JpgFromRaw"]:
         try:
-            # Extraction binaire (-b) du tag via exiftool
-            # Utilisation de asyncio pour ne pas bloquer la boucle d'événements
+            # Binary extraction (-b) of the tag via exiftool
+            # Use asyncio to avoid blocking the event loop
             proc = await asyncio.create_subprocess_exec(
                 "exiftool",
                 "-b",
@@ -249,7 +249,7 @@ async def extract_jpeg_preview(image: Image | ImageStorage) -> bytes | None:
                 image.path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                limit=1024 * 1024 * 50,  # Augmentation du buffer (50 Mo) pour les grosses images
+                limit=1024 * 1024 * 50,  # Increase buffer (50 MB) for large images
             )
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30.0)
