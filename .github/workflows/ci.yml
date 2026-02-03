@@ -74,10 +74,20 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run tests with coverage check
-        # --cov-fail-under=95 force job to failed if coverage is < 90%
-        # Add --cov-repoort=html for human report and --junitxml for tests badge
-        run: uv run pytest --cov --cov-report=xml --cov-report=html --junitxml=junit.xml --cov-fail-under=90
+      - name: Run Unit Tests
+        run: |
+          uv run pytest -m "not integration" \
+            --cov --cov-report=xml \
+            --junitxml=junit-unit.xml
+
+      - name: Run Integration Tests
+        # --cov-append adds coverage to the previous run instead of overwriting it
+        run: |
+          uv run pytest -m "integration" \
+            --cov --cov-append \
+            --cov-report=xml --cov-report=html \
+            --junitxml=junit-int.xml \
+            --cov-fail-under=90
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -85,7 +95,8 @@ jobs:
           name: coverage-report
           path: |
             coverage.xml
-            junit.xml
+            junit-unit.xml
+            junit-int.xml
             htmlcov/
           retention-days: 1
 
@@ -110,10 +121,23 @@ jobs:
           enable-cache: true
 
       - name: Generate Coverage Badge
-        run: uv run --with genbadge[coverage] genbadge coverage -i coverage.xml -o docs/coverage.svg
+        run: |
+          uv run --with genbadge[coverage] genbadge coverage \
+            -i coverage.xml \
+            -o docs/coverage.svg
+
+      - name: Merge JUnit reports
+        run: |
+          uv run --with junitparser \
+            junitparser merge \
+              junit-unit.xml junit-int.xml \
+              junit-merged.xml
 
       - name: Generate Tests Badge
-        run: uv run --with genbadge[tests] genbadge tests -i junit.xml -o docs/tests.svg
+        run: |
+          uv run --with genbadge[tests] genbadge tests \
+            -i junit-merged.xml \
+            -o docs/tests.svg
 
       - name: Commit badge
         uses: stefanzweifel/git-auto-commit-action@v5

@@ -45,12 +45,22 @@ def pytest_report_header(config):
     return messages
 
 
+def pytest_configure(config):
+    """Record the custom marker to avoid warnings."""
+    config.addinivalue_line("markers", "integration: mark test as integration test (slow)")
+
+
 def pytest_collection_modifyitems(items):
     """
-    Hook Pytest pour modifier l'ordre d'exécution.
-    Force les tests situés dans un dossier 'warmup' à être exécutés en premier.
+    Pytest Hook to change execution order.
+    Force tests in 'warmup' directory to be executed first.
+    Marks all tests using heavy fixtures as 'integration'.
     """
     items.sort(key=lambda x: 0 if "warmup" in str(x.path) else 1)
+
+    for item in items:
+        if "seed_data" in item.fixturenames or "upload_image" in item.fixturenames:
+            item.add_marker(pytest.mark.integration)
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")

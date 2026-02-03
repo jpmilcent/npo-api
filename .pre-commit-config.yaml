@@ -38,4 +38,4 @@ repos:
       - id: pip-audit
         name: "pip-audit: security audit"
         stages: [pre-commit]
-        args: ["--skip-editable"]
+        args: ["--skip-editable", "."]
