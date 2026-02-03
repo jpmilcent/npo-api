@@ -9,6 +9,7 @@ from npo.common.decorators import NpoApiRoute
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
+from npo.core.i18n import _
 from npo.modules.images.crud import get_image_by_pixel_hash, get_images_list
 from npo.modules.images.exceptions import (
     DomainError,
@@ -43,19 +44,19 @@ from npo.modules.images.services import (
 logger = logging.getLogger(__name__)
 
 IMAGE_NOT_FOUND_RESPONSE = {
-    "description": "Image not found",
+    "description": _("Image not found"),
     "code": ErrorCode.IMAGE_NOT_FOUND,
     "message": ErrorCode.IMAGE_NOT_FOUND.message,
 }
 
 RAW_METADATA_NOT_FOUND_RESPONSE = {
-    "description": "Raw metadata not found",
+    "description": _("Raw metadata not found"),
     "code": ErrorCode.RAW_METADATA_NOT_FOUND,
     "message": ErrorCode.RAW_METADATA_NOT_FOUND.message,
 }
 
 PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE = {
-    "description": "Photography metadata not found",
+    "description": _("Photography metadata not found"),
     "code": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
     "message": ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.message,
 }
@@ -79,7 +80,12 @@ images_route = NpoApiRoute(images_router)
 
 @images_router.get(
     "/",
-    summary="Get paginated images list",
+    summary=_("Get paginated images list"),
+    description=_(
+        "Retrieves the list of stored images with pagination. "
+        "Returns basic metadata (hash, name, date, location)."
+    ),
+    response_description=_("List of images and pagination information"),
 )
 async def root(
     db: Annotated[AsyncSession, Depends(get_session)],
@@ -104,8 +110,20 @@ async def root(
 
 @images_router.post(
     "/upload",
-    summary="Upload image files",
+    summary=_("Upload image files"),
+    description=_(
+        "Upload one or more images. "
+        "The system automatically calculates hashes, extracts EXIF metadata, and "
+        "generates tiles for Deep Zoom."
+    ),
+    response_description=_("Dictionary of processed files with their information"),
     status_code=status.HTTP_201_CREATED,
+    responses={
+        409: {"description": _("Duplicate image (perceptual hash or unique ID already exists)")},
+        413: {"description": _("File too large")},
+        507: {"description": _("Insufficient storage space")},
+        400: {"description": _("Image decoding or processing error")},
+    },
 )
 async def compute_upload_images(
     files: list[UploadFile], db: Annotated[AsyncSession, Depends(get_session)]
@@ -143,8 +161,12 @@ async def compute_upload_images(
 
 @images_route(
     "/{pixel_hash}/{zoom}/{x}/{y}.jpg",
-    summary="Get tile image by pixel hash, zoom level and coordinates",
-    responses={200: {"content": {"image/jpeg": {}}}},
+    summary=_("Get tile image by pixel hash, zoom level and coordinates"),
+    description=_("Retrieves a specific tile (JPEG format) for Deep Zoom display."),
+    responses={
+        200: {"content": {"image/jpeg": {}}, "description": _("JPEG image tile")},
+        404: {"description": _("Image or tile not found")},
+    },
     response_class=Response,
     override_404=IMAGE_NOT_FOUND_RESPONSE,
 )
@@ -173,8 +195,15 @@ async def get_image_tile(
 
 @images_route(
     "/{pixel_hash}",
-    summary="Get file image by pixel hash",
-    responses={200: {"content": {"image/jpeg": {}}}},
+    summary=_("Get file image by pixel hash"),
+    description=_("Retrieves the full original image or its preview."),
+    responses={
+        200: {
+            "content": {"image/jpeg": {}, "image/png": {}, "image/webp": {}},
+            "description": _("Image file"),
+        },
+        404: {"description": _("Image not found")},
+    },
     response_class=Response,
     override_404=IMAGE_NOT_FOUND_RESPONSE,
 )
@@ -200,7 +229,8 @@ async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(ge
 
 @images_route(
     "/{pixel_hash}/metadata",
-    summary="Raw metadata by pixel hash",
+    summary=_("Raw metadata by pixel hash"),
+    description=_("Returns all raw metadata (EXIF, XMP, etc.) extracted from the file."),
     override_404=RAW_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
@@ -217,7 +247,10 @@ async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(
 
 @images_route(
     "/{pixel_hash}/metadata/photography",
-    summary="Selected photography metadata by pixel hash",
+    summary=_("Selected photography metadata by pixel hash"),
+    description=_(
+        "Returns a formatted selection of photography metadata (ISO, Aperture, Model, etc.)."
+    ),
     override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
     response_model=PhotographyMetadata,
 )

@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from npo.core.i18n import _
 
 
 class Image(BaseModel):
@@ -32,23 +34,23 @@ class Image(BaseModel):
 class PhotographyMetadata(BaseModel):
     """Schema for formatted photography metadata."""
 
-    cameraMaker: str | None = None
-    cameraModel: str | None = None
-    lensModel: str | None = None
-    focalLength: str | None = None
-    focalLengthIn35mmFormat: str | None = None
-    aperture: str | None = None
-    shutterSpeed: str | None = None
-    iso: int | str | None = None
-    flash: str | None = None
-    imageWidth: str | None = None
-    imageHeight: str | None = None
-    orientation: str | None = None
-    whiteBalance: str | None = None
-    exposureProgram: str | None = None
-    exposureMode: str | None = None
-    exposureCompensation: str | None = None
-    meteringMode: str | None = None
-    sceneCaptureType: str | None = None
-    sceneType: str | None = None
-    colorSpace: str | None = None
+    cameraMaker: str | None = Field(None, description=_("Camera manufacturer (e.g. Canon)"))
+    cameraModel: str | None = Field(None, description=_("Camera model (e.g. EOS 5D)"))
+    lensModel: str | None = Field(None, description=_("Lens model used"))
+    focalLength: str | None = Field(None, description=_("Focal length (e.g. 50 mm)"))
+    focalLengthIn35mmFormat: str | None = Field(None, description=_("35mm equivalent focal length"))
+    aperture: str | None = Field(None, description=_("Aperture (e.g. f/2.8)"))
+    shutterSpeed: str | None = Field(None, description=_("Shutter speed (e.g. 1/100)"))
+    iso: int | str | None = Field(None, description=_("ISO sensitivity"))
+    flash: str | None = Field(None, description=_("Flash status at capture"))
+    imageWidth: str | None = Field(None, description=_("Image width in pixels"))
+    imageHeight: str | None = Field(None, description=_("Image height in pixels"))
+    orientation: str | None = Field(None, description=_("Image orientation"))
+    whiteBalance: str | None = Field(None, description=_("White balance"))
+    exposureProgram: str | None = Field(None, description=_("Exposure program"))
+    exposureMode: str | None = Field(None, description=_("Exposure mode"))
+    exposureCompensation: str | None = Field(None, description=_("Exposure compensation (EV)"))
+    meteringMode: str | None = Field(None, description=_("Metering mode"))
+    sceneCaptureType: str | None = Field(None, description=_("Scene capture type"))
+    sceneType: str | None = Field(None, description=_("Scene type"))
+    colorSpace: str | None = Field(None, description=_("Color space (e.g. sRGB)"))

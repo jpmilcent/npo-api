@@ -7,95 +7,99 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-22 08:54+0100\n"
-"PO-Revision-Date: 2026-01-14 14:11+0100\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: fr\n"
+"POT-Creation-Date: 2026-02-02 22:08+0100\n"
+"PO-Revision-Date: 2026-02-03 00:56+0100\n"
+"Last-Translator: \n"
 "Language-Team: fr <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.6\n"
 
-#: src/npo/core/constants.py:30
-#, fuzzy, python-brace-format
+#: src/npo/core/constants.py:35
+#, python-brace-format
 msgid "Image {filename} with perceptual hash {perceptual_hash} already exists."
-msgstr "Image {file_name} avec hash perceptuel {hash} déjà existant."
+msgstr "Image {filename} avec hash perceptuel {perceptual_hash} déjà existant."
 
-#: src/npo/core/constants.py:34
-#, fuzzy, python-brace-format
+#: src/npo/core/constants.py:39
+#, python-brace-format
 msgid "Image {filename} with image unique ID {image_unique_id} already exists."
-msgstr "Image {file_name} avec ID d'image unique {image_unique_id} déjà existant."
+msgstr "Image {filename} avec ID d'image unique {image_unique_id} déjà existant."
 
-#: src/npo/core/constants.py:36
+#: src/npo/core/constants.py:41
 msgid "File size exceeds the maximum allowed limit."
 msgstr "Taille de fichier dépassant la limite autorisée."
 
-#: src/npo/core/constants.py:37
+#: src/npo/core/constants.py:42
 msgid "There was an error uploading the file."
 msgstr "Une erreur est survenue lors du téléversement du fichier."
 
-#: src/npo/core/constants.py:38
+#: src/npo/core/constants.py:43
 #, python-brace-format
 msgid "Unable to decode image file {filename}."
 msgstr "Incapable de décoder le fichier image {filename}."
 
-#: src/npo/core/constants.py:39
+#: src/npo/core/constants.py:44
 #, python-brace-format
 msgid "Image {pixel_hash} not found."
 msgstr "Image avec le pixel hash {pixel_hash} introuvable."
 
-#: src/npo/core/constants.py:42
+#: src/npo/core/constants.py:47
+#, python-brace-format
+msgid "DZI tile for image {pixel_hash} tile {zoom}/{x}/{y} not found."
+msgstr "Tuile DZI pour l'image {pixel_hash} tuile {zoom}/{x}/{y} introuvable."
+
+#: src/npo/core/constants.py:51
 #, python-brace-format
 msgid "Unable to process image file {filename} for perceptual hashing."
-msgstr ""
-"Incapable de traiter le fichier image {filename} pour le hashage "
-"perceptuel."
+msgstr "Incapable de traiter le fichier image {filename} pour le hash perceptuel."
 
-#: src/npo/core/constants.py:46
+#: src/npo/core/constants.py:55
 #, python-brace-format
 msgid "Webservice /images/{path} requested not found."
 msgstr "Webservice /images/{path} demandé introuvable."
 
-#: src/npo/core/constants.py:50
+#: src/npo/core/constants.py:59
 msgid "Not enough disk space to save the file."
 msgstr "Pas assez d'espace de stockage pour sauvegarder le fichier."
 
-#: src/npo/core/constants.py:54
+#: src/npo/core/constants.py:63
 #, python-brace-format
 msgid "Raw metadata for file {pixel_hash} not found."
 msgstr "Métadonnées brutes du fichier avec le pixel hash {pixel_hash} introuvable."
 
-#: src/npo/core/constants.py:58
+#: src/npo/core/constants.py:67
 #, python-brace-format
 msgid "Photography metadata for file {pixel_hash} not found."
 msgstr ""
 "Métadonnées de photographie du fichier avec le pixel hash {pixel_hash} "
 "introuvable."
 
-#: src/npo/core/constants.py:62
+#: src/npo/core/constants.py:71
 #, python-brace-format
 msgid "Webservice /settings/{path} requested not found."
 msgstr "Webservice /settings/{path} demandé introuvable."
 
-#: src/npo/core/constants.py:67
+#: src/npo/core/constants.py:76
 #, python-brace-format
 msgid ""
-"The application version could not be determined for package "
-"'{package_name}'. Check if the package is installed."
+"The application version could not be determined for package '{package_name}'. "
+"Check if the package is installed."
 msgstr ""
 "La version de l'application ne peut pas être déterminée pour le paquet "
-"'{package_name}'. Vérifiez si le paquet est installé"
+"'{package_name}'. Vérifiez si le paquet est installé."
 
-#: src/npo/core/constants.py:74
+#: src/npo/core/constants.py:83
 #, python-brace-format
 msgid ""
-"Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 "
-"is supported."
+"Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 is "
+"supported."
 msgstr ""
-"Image {filename} avec un datum GPS non pris en charge : {gps_datum}. Seul"
-" le datum WGS-84 est pris en charge"
+"Image {filename} avec un datum GPS non pris en charge : {gps_datum}. Seul le "
+"datum WGS-84 est pris en charge."
 
 #: src/npo/modules/images/metadata_formatters.py:56
 msgid "No Flash"
@@ -119,7 +123,7 @@ msgstr "imposée"
 
 #: src/npo/modules/images/metadata_formatters.py:69
 msgid "suppressed"
-msgstr "supprimée "
+msgstr "supprimée"
 
 #: src/npo/modules/images/metadata_formatters.py:72
 msgid "red-eye reduction"
@@ -143,7 +147,7 @@ msgstr "Miroir vertical"
 
 #: src/npo/modules/images/metadata_formatters.py:89
 msgid "Mirror horizontal and rotate 270 CW"
-msgstr "Mirroir horizontal et rotation de 270 degrés sens horaire"
+msgstr "Miroir horizontal et rotation de 270 degrés sens horaire"
 
 #: src/npo/modules/images/metadata_formatters.py:90
 msgid "Rotate 90 CW"
@@ -151,7 +155,7 @@ msgstr "Rotation de 90 degrés sens horaire"
 
 #: src/npo/modules/images/metadata_formatters.py:91
 msgid "Mirror horizontal and rotate 90 CW"
-msgstr "Mirroir horizontal et rotation de 90 degrés sens horaire"
+msgstr "Miroir horizontal et rotation de 90 degrés sens horaire"
 
 #: src/npo/modules/images/metadata_formatters.py:92
 msgid "Rotate 270 CW"
@@ -268,3 +272,201 @@ msgstr "Adobe RGB"
 msgid "Uncalibrated"
 msgstr "Non calibré"
 
+#: src/npo/modules/images/routes.py:52 src/npo/modules/images/routes.py:210
+#, python-brace-format
+msgid "Image not found"
+msgstr "Image introuvable"
+
+#: src/npo/modules/images/routes.py:58
+#, python-brace-format
+msgid "Raw metadata not found"
+msgstr "Métadonnées brutes introuvable"
+
+#: src/npo/modules/images/routes.py:64
+#, python-brace-format
+msgid "Photography metadata not found"
+msgstr "Métadonnées de photographie introuvable"
+
+#: src/npo/modules/images/routes.py:88
+msgid "Get paginated images list"
+msgstr "Obtenir la liste des images paginées"
+
+#: src/npo/modules/images/routes.py:90
+msgid ""
+"Retrieves the list of stored images with pagination. Returns basic metadata "
+"(hash, name, date, location)."
+msgstr ""
+"Retourner la liste des images stockées avec une pagination. Retourne les "
+"métadonnées basiques (hash, nom, date, localisation)."
+
+#: src/npo/modules/images/routes.py:93
+msgid "List of images and pagination information"
+msgstr "Liste des images et information de pagination"
+
+#: src/npo/modules/images/routes.py:118
+msgid "Upload image files"
+msgstr "Fichiers d'image téléversés"
+
+#: src/npo/modules/images/routes.py:120
+msgid ""
+"Upload one or more images. The system automatically calculates hashes, extracts "
+"EXIF metadata, and generates tiles for Deep Zoom."
+msgstr ""
+"Téléverse une ou plusieurs images. Le système calcule automatiquement les hashs, "
+"extraits les métadonnées EXIF et génère des tuiles pour un zoom haute résolution."
+
+#: src/npo/modules/images/routes.py:124
+msgid "Dictionary of processed files with their information"
+msgstr "Dictionnaire des fichiers traités avec leur information."
+
+#: src/npo/modules/images/routes.py:127
+msgid "Duplicate image (perceptual hash or unique ID already exists)"
+msgstr "Image dupliquée (le hash perceptuel ou l'ID d'image unique existe déjà)."
+
+#: src/npo/modules/images/routes.py:128
+msgid "File too large"
+msgstr "Fichier trop volumineux"
+
+#: src/npo/modules/images/routes.py:129
+msgid "Insufficient storage space"
+msgstr "Espace de stockage insuffisant"
+
+#: src/npo/modules/images/routes.py:130
+msgid "Image decoding or processing error"
+msgstr "Erreur de décodage ou de traitement de l'image"
+
+#: src/npo/modules/images/routes.py:169
+msgid "Get tile image by pixel hash, zoom level and coordinates"
+msgstr ""
+"Obtenir la tuile de l'image à l'aide de son hash de pixels, du niveau de zoom et "
+"des coordonnées"
+
+#: src/npo/modules/images/routes.py:170
+msgid "Retrieves a specific tile (JPEG format) for Deep Zoom display."
+msgstr ""
+"Récupère une tuile spécifique (format JPEG) pour l'affichage avec un zoom haute "
+"résolution."
+
+#: src/npo/modules/images/routes.py:172
+msgid "JPEG image tile"
+msgstr "Tuile image JPEG"
+
+#: src/npo/modules/images/routes.py:173
+#, python-brace-format
+msgid "Image or tile not found"
+msgstr "Image ou tuile introuvable."
+
+#: src/npo/modules/images/routes.py:203
+msgid "Get file image by pixel hash"
+msgstr "Obtenir le fichier image à l'aide d'un hash des pixels"
+
+#: src/npo/modules/images/routes.py:204
+msgid "Retrieves the full original image or its preview."
+msgstr "Récupère l'image originale complète ou son aperçu."
+
+#: src/npo/modules/images/routes.py:208
+msgid "Image file"
+msgstr "Fichier image"
+
+#: src/npo/modules/images/routes.py:237
+#, python-brace-format
+msgid "Raw metadata by pixel hash"
+msgstr "Métadonnées brutes en fonction du hash des pixels"
+
+#: src/npo/modules/images/routes.py:238
+msgid "Returns all raw metadata (EXIF, XMP, etc.) extracted from the file."
+msgstr ""
+"Retourne toutes les métadonnées brutes (EXIF, XMP, etc.) extrait du fichier."
+
+#: src/npo/modules/images/routes.py:255
+#, python-brace-format
+msgid "Selected photography metadata by pixel hash"
+msgstr "Sélection de métadonnées de photographie par hash des pixels"
+
+#: src/npo/modules/images/routes.py:257
+msgid ""
+"Returns a formatted selection of photography metadata (ISO, Aperture, Model, "
+"etc.)."
+msgstr ""
+"Retourne une sélection de métadonnées photographique formatées (ISO, Ouverture, "
+"Modèle, etc.)."
+
+#: src/npo/modules/images/schemas.py:40
+msgid "Camera manufacturer (e.g. Canon)"
+msgstr "Fabricant d'appareil photo (ex. Canon)"
+
+#: src/npo/modules/images/schemas.py:41
+msgid "Camera model (e.g. EOS 5D)"
+msgstr "Modèle d'appareil photo (ex. EOS 5D)"
+
+#: src/npo/modules/images/schemas.py:42
+msgid "Lens model used"
+msgstr "Modèle d'objectif utilisé"
+
+#: src/npo/modules/images/schemas.py:43
+msgid "Focal length (e.g. 50 mm)"
+msgstr "Distance focale (ex. 50 mm)"
+
+#: src/npo/modules/images/schemas.py:44
+msgid "35mm equivalent focal length"
+msgstr "Distance focale équivalente en 35mm"
+
+#: src/npo/modules/images/schemas.py:45
+msgid "Aperture (e.g. f/2.8)"
+msgstr "Ouverture (ex. f/2.8)"
+
+#: src/npo/modules/images/schemas.py:46
+msgid "Shutter speed (e.g. 1/100)"
+msgstr "Vitesse d'ouverture (ex. 1/100)"
+
+#: src/npo/modules/images/schemas.py:47
+msgid "ISO sensitivity"
+msgstr "Sensibilité ISO"
+
+#: src/npo/modules/images/schemas.py:48
+msgid "Flash status at capture"
+msgstr "État du flash lors de la prise"
+
+#: src/npo/modules/images/schemas.py:49
+msgid "Image width in pixels"
+msgstr "Largeur de l'image en pixels"
+
+#: src/npo/modules/images/schemas.py:50
+msgid "Image height in pixels"
+msgstr "Hauteur de l'image en pixels"
+
+#: src/npo/modules/images/schemas.py:51
+msgid "Image orientation"
+msgstr "Orientation de l'image"
+
+#: src/npo/modules/images/schemas.py:52
+msgid "White balance"
+msgstr "Balance des blancs"
+
+#: src/npo/modules/images/schemas.py:53
+msgid "Exposure program"
+msgstr "Programme d'exposition"
+
+#: src/npo/modules/images/schemas.py:54
+msgid "Exposure mode"
+msgstr "Mode d'exposition"
+
+#: src/npo/modules/images/schemas.py:55
+msgid "Exposure compensation (EV)"
+msgstr "Compensation d'exposition (EV)"
+
+#: src/npo/modules/images/schemas.py:56
+msgid "Metering mode"
+msgstr "Mode de mesure"
+
+#: src/npo/modules/images/schemas.py:57
+msgid "Scene capture type"
+msgstr "Type de capture de scène"
+
+#: src/npo/modules/images/schemas.py:58
+msgid "Scene type"
+msgstr "Type de scène"
+
+#: src/npo/modules/images/schemas.py:59
+msgid "Color space (e.g. sRGB)"
+msgstr "Modèle d'appareil photo (ex. EOS 5D)"

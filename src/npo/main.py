@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
-from fastapi_babel import BabelConfigs, BabelMiddleware
+from fastapi_babel import BabelConfigs, BabelMiddleware, _
 
 from npo.core import config
 from npo.core.database import init_db
@@ -17,6 +17,7 @@ from npo.core.dependencies import (
     make_upload_directory,
 )
 from npo.core.logging import request_id_context, setup_logging
+from npo.core.openapi import register_custom_openapi
 from npo.modules.health.routes import health_router
 from npo.modules.images.routes import images_router
 from npo.modules.settings.routes import settings_router
@@ -85,6 +86,9 @@ app.add_middleware(
     BabelMiddleware,
     babel_configs=babel_configs,
 )
+
+# Register custom OpenAPI generation for dynamic translation
+register_custom_openapi(app, _)
 
 
 @app.get("/")

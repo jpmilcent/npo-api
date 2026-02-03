@@ -4,12 +4,7 @@ from string import Formatter
 from fastapi_babel import _
 from pydantic import BaseModel, Field, ValidationError
 
-
-def gettext_noop(message: str) -> str:
-    return message
-
-
-N_ = gettext_noop
+from npo.core.i18n import N_
 
 
 class ErrorArguments(BaseModel):
