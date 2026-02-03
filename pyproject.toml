@@ -137,7 +137,7 @@ show_missing = true
 [tool.pyright]
 include = ["src", "typings"]
 stubPath = "typings"
-exclude = ["tests"]
+ignore = ["tests"]
 typeCheckingMode = "basic"
 reportMissingTypeStubs = true
 pythonVersion = "3.13"
