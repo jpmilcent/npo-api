@@ -55,7 +55,7 @@ async def check_health(session: Annotated[AsyncSession, Depends(get_session)]) -
     status_code=status.HTTP_200_OK,
     response_model=HealthPing,
 )
-async def get_pong():
+async def get_pong() -> HealthPing:
     return HealthPing(ping="pong")
 
 

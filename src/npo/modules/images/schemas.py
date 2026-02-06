@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 from npo.common.schemas import PaginatedResponse
 from npo.core.i18n import _
@@ -43,6 +43,28 @@ class Image(BaseModel):
     meta_data: dict | None = Field(
         default=None, description=_("Image metadata extracted with Exiftool.")
     )
+
+
+class UploadResponse(RootModel[dict[str, Image]]):
+    """Response model for the image upload endpoint, mapping filenames to image details."""
+
+    model_config: ClassVar[dict] = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "landscape.jpg": {
+                        "name": "landscape.jpg",
+                        "path": "/data/uploads/landscape.jpg",
+                        "mime": "image/jpeg",
+                        "size": 5242880,
+                        "datetime_shooting": "2023-08-15T14:30:00",
+                        "latitude": 48.8584,
+                        "longitude": 2.2945,
+                    }
+                }
+            ]
+        }
+    }
 
 
 class PhotographyMetadata(BaseModel):

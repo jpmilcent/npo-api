@@ -23,7 +23,11 @@ from npo.modules.images.exceptions import (
     UnsupportedGpsDatumError,
 )
 from npo.modules.images.metadata_formatters import MetadataFormatter
-from npo.modules.images.schemas import Image, ImageListResponse, PhotographyMetadata
+from npo.modules.images.schemas import (
+    ImageListResponse,
+    PhotographyMetadata,
+    UploadResponse,
+)
 from npo.modules.images.services import (
     build_image_infos,
     check_duplicates_by_image_unique_id,
@@ -143,8 +147,7 @@ async def root(
             },
         },
     },
-    # TODO: create a schema for this type of response
-    response_model=dict[str, Image],
+    response_model=UploadResponse,
 )
 async def compute_upload_images(
     files: Annotated[
@@ -152,7 +155,7 @@ async def compute_upload_images(
         File(description=_("List of image files to upload.")),
     ],
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> UploadResponse:
     infos = {}
     # Process each received image files
     for upload_file in files:
@@ -180,8 +183,8 @@ async def compute_upload_images(
             ) from e
 
         logger.info("File {file.name} was uploaded successfully!")
-        infos[file.name] = file.__dict__
-    return infos
+        infos[file.name] = file
+    return UploadResponse(root=infos)
 
 
 @images_route(
