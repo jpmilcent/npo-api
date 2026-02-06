@@ -1,4 +1,6 @@
-from sqlalchemy import func, select
+from collections.abc import Sequence
+
+from sqlalchemy import RowMapping, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.modules.images.models import Image as ImageStorage
@@ -35,7 +37,9 @@ async def get_image_by_image_unique_id(
     return image
 
 
-async def get_images_list(db: AsyncSession, skip: int = 0, limit: int = 100):
+async def get_images_list(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> tuple[Sequence[RowMapping], int]:
     stmt_count = select(func.count()).select_from(ImageStorage)
     total = await db.scalar(stmt_count)
     total = total if total is not None else 0

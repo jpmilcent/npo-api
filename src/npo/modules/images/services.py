@@ -66,7 +66,7 @@ async def extract_mime_type(file: UploadFile) -> str:
     return mime_type
 
 
-async def save_file(upload_file: UploadFile, file: Image):
+async def save_file(upload_file: UploadFile, file: Image) -> None:
     if file.size:
         check_max_upload_size(file.size)
 
