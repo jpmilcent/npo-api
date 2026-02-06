@@ -6,6 +6,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.common.decorators import NpoApiRoute
+from npo.common.pagination import create_paginated_response
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
@@ -22,7 +23,7 @@ from npo.modules.images.exceptions import (
     UnsupportedGpsDatumError,
 )
 from npo.modules.images.metadata_formatters import MetadataFormatter
-from npo.modules.images.schemas import PhotographyMetadata
+from npo.modules.images.schemas import Image, ImageListResponse, PhotographyMetadata
 from npo.modules.images.services import (
     build_image_infos,
     check_duplicates_by_image_unique_id,
@@ -86,6 +87,7 @@ images_route = NpoApiRoute(images_router)
         "Returns basic metadata (hash, name, date, location)."
     ),
     response_description=_("List of images and pagination information"),
+    response_model=ImageListResponse,
 )
 async def root(
     db: Annotated[AsyncSession, Depends(get_session)],
@@ -95,17 +97,7 @@ async def root(
     skip = (page - 1) * size
     limit = size
     images, total = await get_images_list(db, skip=skip, limit=limit)
-    return {
-        "meta": {
-            "pagination": {
-                "total_items": total,
-                "total_pages": (total + limit - 1) // limit,
-                "current_page": page,
-                "items_per_page": limit,
-            }
-        },
-        "data": images,
-    }
+    return create_paginated_response(data=images, total=total, page=page, size=limit)
 
 
 @images_router.post(
@@ -124,6 +116,8 @@ async def root(
         507: {"description": _("Insufficient storage space")},
         400: {"description": _("Image decoding or processing error")},
     },
+    # TODO: create a schema for this type of response
+    response_model=dict[str, Image],
 )
 async def compute_upload_images(
     files: list[UploadFile], db: Annotated[AsyncSession, Depends(get_session)]

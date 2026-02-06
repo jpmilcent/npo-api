@@ -1,7 +1,9 @@
 from datetime import datetime
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
+from npo.common.schemas import PaginatedResponse
 from npo.core.i18n import _
 
 
@@ -54,3 +56,49 @@ class PhotographyMetadata(BaseModel):
     sceneCaptureType: str | None = Field(None, description=_("Scene capture type"))
     sceneType: str | None = Field(None, description=_("Scene type"))
     colorSpace: str | None = Field(None, description=_("Color space (e.g. sRGB)"))
+
+
+class ImageSummary(BaseModel):
+    id: int = Field(description=_("Image database primary key ID."))
+    hash: str = Field(description=_("Image pixel hash use for storage path."))
+    name: str | None = Field(description=_("Image file name."))
+    mime: str | None = Field(description=_("Image MIME type."))
+    size: int | None = Field(description=_("Image size in bytes."))
+    datetime_shooting: datetime | None = Field(description=_("Image shooting date and time."))
+    latitude: float | None = Field(description=_("Image latitude extracted from metadata."))
+    longitude: float | None = Field(description=_("Image longitude extracted from metadata."))
+    created_at: datetime | None = Field(description=_("Image creation date and time."))
+    updated_at: datetime | None = Field(description=_("Image update date and time."))
+
+
+class ImageListResponse(PaginatedResponse[ImageSummary]):
+    model_config: ClassVar[dict] = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "meta": {
+                        "pagination": {
+                            "total_items": 1,
+                            "total_pages": 1,
+                            "current_page": 1,
+                            "items_per_page": 100,
+                        }
+                    },
+                    "data": [
+                        {
+                            "id": 123,
+                            "hash": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+                            "name": "landscape_photo.jpg",
+                            "mime": "image/jpeg",
+                            "size": 5120345,
+                            "datetime_shooting": "2023-08-15T14:30:00",
+                            "latitude": 48.8584,
+                            "longitude": 2.2945,
+                            "created_at": "2023-10-27T15:00:00Z",
+                            "updated_at": "2023-10-27T15:00:00Z",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
