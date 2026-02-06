@@ -38,4 +38,5 @@ repos:
       - id: pip-audit
         name: "pip-audit: security audit"
         stages: [pre-commit]
+        # Use "." to scan only dependencies declared in pyproject.toml and avoid pip security errors
         args: ["--skip-editable", "."]

@@ -170,6 +170,13 @@ The first time, a fixture automatically downloads these files (mostly RAW and DN
 
 By default, pytest shows durations for the 5 longest tests. Use `uv run pytest --durations=0` to show all test durations.
 
+To run tests with Pytest, use for example:
+- all: `uv run pytest`
+- specific file: `uv run pytest tests/path/test_file.py`
+- integration tests: `uv run pytest -m integration`
+- unit tests: `uv run pytest -m "not integration"`
+
+
 #### 📊 Tests coverage
 
 To update the coverage report use: `uv run pytest --cov --cov-report=html`
@@ -192,7 +199,11 @@ To update the catalog files (`.po`) from the template file (`.pot`):
 ```bash
 uv run pybabel update -i src/npo/locales/messages.pot -d src/npo/locales
 ```
-At this step, you must translate the strings inside `.po` files.
+At this step, you must translate the strings inside `.po` files. You can use [Poedit](https://poedit.net/) or any text editor. To install Poedit on Debian:
+```bash
+sudo apt install poedit
+```
+Then open with Poedit the `.po` files located in `src/npo/locales/<language>/LC_MESSAGES/`.
 
 To compile catalog files (`.po`) to binary (`.mo`) files:
 ```bash
