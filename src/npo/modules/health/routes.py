@@ -3,7 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from npo.core.constants import ErrorCode
 from npo.core.database import get_session
+from npo.core.exceptions import APIException
 from npo.core.i18n import _
 from npo.modules.health.schemas import HealthCheck, HealthPing
 from npo.modules.health.services import (
@@ -55,3 +57,12 @@ async def check_health(session: Annotated[AsyncSession, Depends(get_session)]) -
 )
 async def get_pong():
     return HealthPing(ping="pong")
+
+
+@health_router.get("/{path:path}", include_in_schema=False)
+async def health_catch_all(path: str):
+    raise APIException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        code=ErrorCode.HEALTH_WEBSERVICE_NOT_FOUND,
+        message=ErrorCode.HEALTH_WEBSERVICE_NOT_FOUND.formatMsg(path=path),
+    )

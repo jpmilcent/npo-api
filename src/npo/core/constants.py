@@ -35,6 +35,10 @@ class ErrorCode(StrEnum):
     )
     FILE_TOO_LARGE = ("FILE_TOO_LARGE", N_("File size exceeds the maximum allowed limit."))
     FILE_UPLOAD_ERROR = ("FILE_UPLOAD_ERROR", N_("There was an error uploading the file."))
+    HEALTH_WEBSERVICE_NOT_FOUND = (
+        "HEALTH_WEBSERVICE_NOT_FOUND",
+        N_("Webservice /health/{path} requested not found."),
+    )
     IMAGE_DECODING_ERROR = ("IMAGE_DECODING_ERROR", N_("Unable to decode image file {filename}."))
     IMAGE_NOT_FOUND = ("IMAGE_NOT_FOUND", N_("Image {pixel_hash} not found."))
     IMAGE_DZI_NOT_FOUND = (
