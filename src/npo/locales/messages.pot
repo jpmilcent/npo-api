@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-02 22:08+0100\n"
+"POT-Creation-Date: 2026-02-05 22:33+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,80 +17,163 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/npo/core/constants.py:35
+#: src/npo/main.py:97
+msgid "Upload form"
+msgstr ""
+
+#: src/npo/main.py:98
+msgid "Simple upload form for testing purposes."
+msgstr ""
+
+#: src/npo/common/schemas.py:9
+msgid "Total number of items"
+msgstr ""
+
+#: src/npo/common/schemas.py:10
+msgid "Total number of pages"
+msgstr ""
+
+#: src/npo/common/schemas.py:11
+msgid "Current page number"
+msgstr ""
+
+#: src/npo/common/schemas.py:12
+msgid "Number of items per page"
+msgstr ""
+
+#: src/npo/core/constants.py:30
 #, python-brace-format
 msgid "Image {filename} with perceptual hash {perceptual_hash} already exists."
 msgstr ""
 
-#: src/npo/core/constants.py:39
+#: src/npo/core/constants.py:34
 #, python-brace-format
 msgid "Image {filename} with image unique ID {image_unique_id} already exists."
 msgstr ""
 
-#: src/npo/core/constants.py:41
+#: src/npo/core/constants.py:36
 msgid "File size exceeds the maximum allowed limit."
 msgstr ""
 
-#: src/npo/core/constants.py:42
+#: src/npo/core/constants.py:37
 msgid "There was an error uploading the file."
 msgstr ""
 
-#: src/npo/core/constants.py:43
+#: src/npo/core/constants.py:40
+#, python-brace-format
+msgid "Webservice /health/{path} requested not found."
+msgstr ""
+
+#: src/npo/core/constants.py:42
 #, python-brace-format
 msgid "Unable to decode image file {filename}."
 msgstr ""
 
-#: src/npo/core/constants.py:44
+#: src/npo/core/constants.py:43
 #, python-brace-format
 msgid "Image {pixel_hash} not found."
 msgstr ""
 
-#: src/npo/core/constants.py:47
+#: src/npo/core/constants.py:46
 #, python-brace-format
 msgid "DZI tile for image {pixel_hash} tile {zoom}/{x}/{y} not found."
 msgstr ""
 
-#: src/npo/core/constants.py:51
+#: src/npo/core/constants.py:50
 #, python-brace-format
 msgid "Unable to process image file {filename} for perceptual hashing."
 msgstr ""
 
-#: src/npo/core/constants.py:55
+#: src/npo/core/constants.py:54
 #, python-brace-format
 msgid "Webservice /images/{path} requested not found."
 msgstr ""
 
-#: src/npo/core/constants.py:59
+#: src/npo/core/constants.py:58
 msgid "Not enough disk space to save the file."
 msgstr ""
 
-#: src/npo/core/constants.py:63
+#: src/npo/core/constants.py:62
 #, python-brace-format
 msgid "Raw metadata for file {pixel_hash} not found."
 msgstr ""
 
-#: src/npo/core/constants.py:67
+#: src/npo/core/constants.py:66
 #, python-brace-format
 msgid "Photography metadata for file {pixel_hash} not found."
 msgstr ""
 
-#: src/npo/core/constants.py:71
+#: src/npo/core/constants.py:70
 #, python-brace-format
 msgid "Webservice /settings/{path} requested not found."
 msgstr ""
 
-#: src/npo/core/constants.py:76
+#: src/npo/core/constants.py:75
 #, python-brace-format
 msgid ""
 "The application version could not be determined for package "
 "'{package_name}'. Check if the package is installed."
 msgstr ""
 
-#: src/npo/core/constants.py:83
+#: src/npo/core/constants.py:82
 #, python-brace-format
 msgid ""
 "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 "
 "is supported."
+msgstr ""
+
+#: src/npo/core/schemas.py:7
+msgid "A unique error code identifying the issue."
+msgstr ""
+
+#: src/npo/core/schemas.py:8
+msgid "A human-readable message explaining the error."
+msgstr ""
+
+#: src/npo/core/schemas.py:10
+msgid "A unique identifier for the request, useful for tracing."
+msgstr ""
+
+#: src/npo/modules/health/routes.py:20 src/npo/modules/settings/routes.py:21
+msgid "Not found"
+msgstr ""
+
+#: src/npo/modules/health/routes.py:26
+msgid "Perform a Health Check"
+msgstr ""
+
+#: src/npo/modules/health/routes.py:28
+msgid ""
+"Endpoint to perform a healthcheck. Check if API return HTTP status 200 "
+"(OK) and if database and directory configurations are operational or not."
+msgstr ""
+
+#: src/npo/modules/health/routes.py:32
+msgid "Return up or down informations about crucial parts of this API."
+msgstr ""
+
+#: src/npo/modules/health/routes.py:52
+msgid "Respond with pong !"
+msgstr ""
+
+#: src/npo/modules/health/routes.py:53
+msgid "Endpoint for checking only if the API is responding."
+msgstr ""
+
+#: src/npo/modules/health/routes.py:54
+msgid "Pong !"
+msgstr ""
+
+#: src/npo/modules/health/schemas.py:9
+msgid "State of the database connection"
+msgstr ""
+
+#: src/npo/modules/health/schemas.py:11
+msgid "State of the storage directory"
+msgstr ""
+
+#: src/npo/modules/health/schemas.py:14
+msgid "State of the upload directory"
 msgstr ""
 
 #: src/npo/modules/images/metadata_formatters.py:56
@@ -264,185 +347,323 @@ msgstr ""
 msgid "Uncalibrated"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:52 src/npo/modules/images/routes.py:210
+#: src/npo/modules/images/routes.py:48 src/npo/modules/images/routes.py:170
 msgid "Image not found"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:58
+#: src/npo/modules/images/routes.py:54 src/npo/modules/images/routes.py:240
 msgid "Raw metadata not found"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:64
+#: src/npo/modules/images/routes.py:60 src/npo/modules/images/routes.py:265
 msgid "Photography metadata not found"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:88
-msgid "Get paginated images list"
+#: src/npo/modules/images/routes.py:84
+msgid "Get images list"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:90
+#: src/npo/modules/images/routes.py:86
 msgid ""
 "Retrieves the list of stored images with pagination. Returns basic "
 "metadata (hash, name, date, location)."
 msgstr ""
 
-#: src/npo/modules/images/routes.py:93
+#: src/npo/modules/images/routes.py:89
 msgid "List of images and pagination information"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:118
+#: src/npo/modules/images/routes.py:105
 msgid "Upload image files"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:120
+#: src/npo/modules/images/routes.py:107
 msgid ""
 "Upload one or more images. The system automatically calculates hashes, "
 "extracts EXIF metadata, and generates tiles for Deep Zoom."
 msgstr ""
 
-#: src/npo/modules/images/routes.py:124
-msgid "Dictionary of processed files with their information"
+#: src/npo/modules/images/routes.py:115
+msgid ""
+"Images uploaded successfully. Dictionary of processed files with their "
+"information."
 msgstr ""
 
-#: src/npo/modules/images/routes.py:127
+#: src/npo/modules/images/routes.py:119
 msgid "Duplicate image (perceptual hash or unique ID already exists)"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:128
+#: src/npo/modules/images/routes.py:120
 msgid "File too large"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:129
+#: src/npo/modules/images/routes.py:121
 msgid "Insufficient storage space"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:130
+#: src/npo/modules/images/routes.py:122
 msgid "Image decoding or processing error"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:169
-msgid "Get tile image by pixel hash, zoom level and coordinates"
+#: src/npo/modules/images/routes.py:163
+msgid "Get file image"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:170
-msgid "Retrieves a specific tile (JPEG format) for Deep Zoom display."
+#: src/npo/modules/images/routes.py:164
+msgid "Retrieves the full original image or its preview using pixel hash."
 msgstr ""
 
-#: src/npo/modules/images/routes.py:172
-msgid "JPEG image tile"
-msgstr ""
-
-#: src/npo/modules/images/routes.py:173
-msgid "Image or tile not found"
-msgstr ""
-
-#: src/npo/modules/images/routes.py:203
-msgid "Get file image by pixel hash"
-msgstr ""
-
-#: src/npo/modules/images/routes.py:204
-msgid "Retrieves the full original image or its preview."
-msgstr ""
-
-#: src/npo/modules/images/routes.py:208
+#: src/npo/modules/images/routes.py:168
 msgid "Image file"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:237
-msgid "Raw metadata by pixel hash"
+#: src/npo/modules/images/routes.py:197
+msgid "Get tile image"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:238
-msgid "Returns all raw metadata (EXIF, XMP, etc.) extracted from the file."
+#: src/npo/modules/images/routes.py:199
+msgid ""
+"Retrieves a specific tile (JPEG format) for high-resolution zoom display "
+"using pixel hash, zoom level and coordinates."
 msgstr ""
 
-#: src/npo/modules/images/routes.py:255
-msgid "Selected photography metadata by pixel hash"
+#: src/npo/modules/images/routes.py:203
+msgid "JPEG image tile"
 msgstr ""
 
-#: src/npo/modules/images/routes.py:257
+#: src/npo/modules/images/routes.py:204
+msgid "Image or tile not found"
+msgstr ""
+
+#: src/npo/modules/images/routes.py:234
+msgid "Get raw metadata"
+msgstr ""
+
+#: src/npo/modules/images/routes.py:236
+msgid ""
+"Returns all raw metadata (EXIF, XMP, etc.) extracted from the file using "
+"pixel hash."
+msgstr ""
+
+#: src/npo/modules/images/routes.py:239
+msgid "Image raw metadata"
+msgstr ""
+
+#: src/npo/modules/images/routes.py:258
+msgid "Get photography metadata"
+msgstr ""
+
+#: src/npo/modules/images/routes.py:260
 msgid ""
 "Returns a formatted selection of photography metadata (ISO, Aperture, "
-"Model, etc.)."
+"Model, etc.) extracted from the file using pixel hash."
+msgstr ""
+
+#: src/npo/modules/images/routes.py:264
+msgid "Image photography metadata"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:13 src/npo/modules/images/schemas.py:109
+msgid "Image file name."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:14
+msgid "Image file path."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:15
+msgid "Image hash part for directory path."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:16
+msgid "Image hash part for file name."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:17 src/npo/modules/images/schemas.py:110
+msgid "Image MIME type."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:18 src/npo/modules/images/schemas.py:111
+msgid "Image size in bytes."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:19
+msgid "Image orientation."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:22 src/npo/modules/images/schemas.py:113
+msgid "Image latitude extracted from metadata."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:25 src/npo/modules/images/schemas.py:114
+msgid "Image longitude extracted from metadata."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:28
+msgid "Image altitude extracted from metadata."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:32 src/npo/modules/images/schemas.py:112
+msgid "Image shooting date and time."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:35
+msgid "Image digitized date."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:38
+msgid "Image unique ID."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:39
+msgid "Image perceptual hash."
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:40
-msgid "Camera manufacturer (e.g. Canon)"
+msgid "Image pixel hash."
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:41
-msgid "Camera model (e.g. EOS 5D)"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:42
-msgid "Lens model used"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:43
-msgid "Focal length (e.g. 50 mm)"
+msgid "Image file hash."
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:44
-msgid "35mm equivalent focal length"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:45
-msgid "Aperture (e.g. f/2.8)"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:46
-msgid "Shutter speed (e.g. 1/100)"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:47
-msgid "ISO sensitivity"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:48
-msgid "Flash status at capture"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:49
-msgid "Image width in pixels"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:50
-msgid "Image height in pixels"
+msgid "Image metadata extracted with Exiftool."
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:51
-msgid "Image orientation"
+msgid "Camera manufacturer (e.g. Canon)"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:52
-msgid "White balance"
+msgid "Camera model (e.g. EOS 5D)"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:53
-msgid "Exposure program"
+msgid "Lens model used"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:54
-msgid "Exposure mode"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:55
-msgid "Exposure compensation (EV)"
+msgid "Focal length (e.g. 50 mm)"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:56
-msgid "Metering mode"
-msgstr ""
-
-#: src/npo/modules/images/schemas.py:57
-msgid "Scene capture type"
+msgid "35mm equivalent focal length"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:58
-msgid "Scene type"
+msgid "Aperture (e.g. f/2.8)"
 msgstr ""
 
 #: src/npo/modules/images/schemas.py:59
+msgid "Shutter speed (e.g. 1/100)"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:60
+msgid "ISO sensitivity"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:61
+msgid "Flash status at capture"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:62
+msgid "Image width in pixels"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:63
+msgid "Image height in pixels"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:64
+msgid "Image orientation"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:65
+msgid "White balance"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:66
+msgid "Exposure program"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:67
+msgid "Exposure mode"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:69
+msgid "Exposure compensation (EV)"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:71
+msgid "Metering mode"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:72
+msgid "Scene capture type"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:73
+msgid "Scene type"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:74
 msgid "Color space (e.g. sRGB)"
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:107
+msgid "Image database primary key ID."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:108
+msgid "Image pixel hash use for storage path."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:115
+msgid "Image creation date and time."
+msgstr ""
+
+#: src/npo/modules/images/schemas.py:116
+msgid "Image update date and time."
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:27
+msgid "Get frontend settings"
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:28
+msgid "Returns all settings shared with the frontend."
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:29
+msgid "Frontend settings"
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:38
+msgid "Get app version"
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:39
+msgid "Returns all data about the app version: tag, dates, commit..."
+msgstr ""
+
+#: src/npo/modules/settings/routes.py:40
+msgid "Version informations"
+msgstr ""
+
+#: src/npo/modules/settings/schema.py:7
+msgid "App version number using semantic versioning."
+msgstr ""
+
+#: src/npo/modules/settings/schema.py:8
+msgid "SHA hash of the last commit."
+msgstr ""
+
+#: src/npo/modules/settings/schema.py:9
+msgid "Date of the last commit."
+msgstr ""
+
+#: src/npo/modules/settings/schema.py:10
+msgid "Current environment."
 msgstr ""
 

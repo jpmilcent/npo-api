@@ -10,6 +10,7 @@ from npo.core import config
 from npo.core.constants import ErrorCode
 from npo.core.dependencies import get_frontend_settings
 from npo.core.exceptions import APIException
+from npo.core.i18n import _
 from npo.modules.settings.schema import Version
 
 logger = logging.getLogger(__name__)
@@ -17,13 +18,16 @@ logger = logging.getLogger(__name__)
 settings_router = APIRouter(
     prefix="/settings",
     tags=["Settings"],
-    responses={404: {"description": "Not found"}},
+    responses={404: {"description": _("Not found")}},
 )
 
 
 @settings_router.get(
     "",
-    summary="App frontend settings",
+    summary=_("Get frontend settings"),
+    description=_("Returns all settings shared with the frontend."),
+    response_description=_("Frontend settings"),
+    response_model=config.FrontendSettings,
 )
 async def info(settings: Annotated[config.FrontendSettings, Depends(get_frontend_settings)]):
     return settings
@@ -31,7 +35,9 @@ async def info(settings: Annotated[config.FrontendSettings, Depends(get_frontend
 
 @settings_router.get(
     "/version",
-    summary="App version",
+    summary=_("Get app version"),
+    description=_("Returns all data about the app version: tag, dates, commit..."),
+    response_description=_("Version informations"),
     response_model=Version,
 )
 async def version():

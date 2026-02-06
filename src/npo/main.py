@@ -16,6 +16,7 @@ from npo.core.dependencies import (
     make_storage_directory,
     make_upload_directory,
 )
+from npo.core.i18n import N_
 from npo.core.logging import request_id_context, setup_logging
 from npo.core.openapi import register_custom_openapi
 from npo.modules.health.routes import health_router
@@ -34,8 +35,29 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Application shutting down!")
 
 
+description = N_(
+    """NPO API helps you manage your naturalist images.
+
+## Middlewares
+
+The API uses several middlewares for all endpoints:
+
+*   **Request ID**: A unique request ID is generated for each incoming
+request and added to the response headers as `X-Request-ID`. This is useful
+for tracking and debugging.
+*   **Request Logging**: All requests are logged with their method, path,
+status code, and processing time.
+*   **Response Time**: The processing time for a request is added to the
+response headers as `X-Response-Time`.
+*   **Internationalization (i18n)**: The API supports multiple languages.
+The language is determined by the `Accept-Language` header in the request.
+"""
+)
+
+
 app = FastAPI(
     title=config.settings.app_name,
+    description=description,
     dependencies=[
         Depends(make_db_directory),
         Depends(make_upload_directory),
@@ -91,9 +113,12 @@ app.add_middleware(
 register_custom_openapi(app, _)
 
 
-@app.get("/")
+@app.get(
+    "/",
+    summary=N_("Upload form"),
+    description=N_("Simple upload form for testing purposes."),
+)
 async def main():
-    """Simple upload form for testing purposes."""
     content = """
 <body>
 <form action="/images/upload" enctype="multipart/form-data" method="post">

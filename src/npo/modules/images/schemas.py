@@ -10,52 +10,97 @@ from npo.core.i18n import _
 class Image(BaseModel):
     """Image data model."""
 
-    name: str | None = None
-    path: str = ""
-    path_hash_dir: str = ""
-    path_hash_file: str = ""
-    mime: str | None = None
-    size: int | None = None
-    orientation: int | None = None
+    name: str | None = Field(default=None, description=_("Image file name."))
+    path: str = Field(default="", description=_("Image file path."))
+    path_hash_dir: str = Field(default="", description=_("Image hash part for directory path."))
+    path_hash_file: str = Field(default="", description=_("Image hash part for file name."))
+    mime: str | None = Field(default=None, description=_("Image MIME type."))
+    size: int | None = Field(default=None, description=_("Image size in bytes."))
+    orientation: int | None = Field(default=None, description=_("Image orientation."))
 
-    latitude: float | None = None
-    longitude: float | None = None
-    altitude: float | None = None
+    latitude: float | None = Field(
+        default=None, description=_("Image latitude extracted from metadata.")
+    )
+    longitude: float | None = Field(
+        default=None, description=_("Image longitude extracted from metadata.")
+    )
+    altitude: float | None = Field(
+        default=None, description=_("Image altitude extracted from metadata.")
+    )
 
-    datetime_shooting: datetime | None = None
-    datetime_digitized: datetime | None = None
+    datetime_shooting: datetime | None = Field(
+        default=None, description=_("Image shooting date and time.")
+    )
+    datetime_digitized: datetime | None = Field(
+        default=None, description=_("Image digitized date.")
+    )
 
-    image_unique_id: str | None = ""
-    perceptual_hash: str = ""
-    pixel_hash: str = ""
-    file_hash: str = ""
+    image_unique_id: str | None = Field(default="", description=_("Image unique ID."))
+    perceptual_hash: str = Field(default="", description=_("Image perceptual hash."))
+    pixel_hash: str = Field(default="", description=_("Image pixel hash."))
+    file_hash: str = Field(default="", description=_("Image file hash."))
 
-    meta_data: dict | None = None
+    meta_data: dict | None = Field(
+        default=None, description=_("Image metadata extracted with Exiftool.")
+    )
 
 
 class PhotographyMetadata(BaseModel):
     """Schema for formatted photography metadata."""
 
-    cameraMaker: str | None = Field(None, description=_("Camera manufacturer (e.g. Canon)"))
-    cameraModel: str | None = Field(None, description=_("Camera model (e.g. EOS 5D)"))
-    lensModel: str | None = Field(None, description=_("Lens model used"))
-    focalLength: str | None = Field(None, description=_("Focal length (e.g. 50 mm)"))
-    focalLengthIn35mmFormat: str | None = Field(None, description=_("35mm equivalent focal length"))
-    aperture: str | None = Field(None, description=_("Aperture (e.g. f/2.8)"))
-    shutterSpeed: str | None = Field(None, description=_("Shutter speed (e.g. 1/100)"))
-    iso: int | str | None = Field(None, description=_("ISO sensitivity"))
-    flash: str | None = Field(None, description=_("Flash status at capture"))
-    imageWidth: str | None = Field(None, description=_("Image width in pixels"))
-    imageHeight: str | None = Field(None, description=_("Image height in pixels"))
-    orientation: str | None = Field(None, description=_("Image orientation"))
-    whiteBalance: str | None = Field(None, description=_("White balance"))
-    exposureProgram: str | None = Field(None, description=_("Exposure program"))
-    exposureMode: str | None = Field(None, description=_("Exposure mode"))
-    exposureCompensation: str | None = Field(None, description=_("Exposure compensation (EV)"))
-    meteringMode: str | None = Field(None, description=_("Metering mode"))
-    sceneCaptureType: str | None = Field(None, description=_("Scene capture type"))
-    sceneType: str | None = Field(None, description=_("Scene type"))
-    colorSpace: str | None = Field(None, description=_("Color space (e.g. sRGB)"))
+    cameraMaker: str | None = Field(default=None, description=_("Camera manufacturer (e.g. Canon)"))
+    cameraModel: str | None = Field(default=None, description=_("Camera model (e.g. EOS 5D)"))
+    lensModel: str | None = Field(default=None, description=_("Lens model used"))
+    focalLength: str | None = Field(default=None, description=_("Focal length (e.g. 50 mm)"))
+    focalLengthIn35mmFormat: str | None = Field(
+        default=None, description=_("35mm equivalent focal length")
+    )
+    aperture: str | None = Field(default=None, description=_("Aperture (e.g. f/2.8)"))
+    shutterSpeed: str | None = Field(default=None, description=_("Shutter speed (e.g. 1/100)"))
+    iso: int | str | None = Field(default=None, description=_("ISO sensitivity"))
+    flash: str | None = Field(default=None, description=_("Flash status at capture"))
+    imageWidth: str | None = Field(default=None, description=_("Image width in pixels"))
+    imageHeight: str | None = Field(default=None, description=_("Image height in pixels"))
+    orientation: str | None = Field(default=None, description=_("Image orientation"))
+    whiteBalance: str | None = Field(default=None, description=_("White balance"))
+    exposureProgram: str | None = Field(default=None, description=_("Exposure program"))
+    exposureMode: str | None = Field(default=None, description=_("Exposure mode"))
+    exposureCompensation: str | None = Field(
+        default=None, description=_("Exposure compensation (EV)")
+    )
+    meteringMode: str | None = Field(default=None, description=_("Metering mode"))
+    sceneCaptureType: str | None = Field(default=None, description=_("Scene capture type"))
+    sceneType: str | None = Field(default=None, description=_("Scene type"))
+    colorSpace: str | None = Field(default=None, description=_("Color space (e.g. sRGB)"))
+
+    model_config: ClassVar[dict] = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "cameraMaker": "Canon",
+                    "cameraModel": "Canon EOS 5D Mark IV",
+                    "lensModel": "EF24-105mm f/4L IS USM",
+                    "focalLength": "50 mm",
+                    "focalLengthIn35mmFormat": "50 mm",
+                    "aperture": "f/8.0",
+                    "shutterSpeed": "1/125",
+                    "iso": 100,
+                    "flash": "Flash did not fire, compulsory flash mode",
+                    "imageWidth": "6720 px",
+                    "imageHeight": "4480 px",
+                    "orientation": "Horizontal (normal)",
+                    "whiteBalance": "Auto",
+                    "exposureProgram": "Aperture priority",
+                    "exposureMode": "Auto",
+                    "exposureCompensation": "+0.3 EV",
+                    "meteringMode": "Pattern",
+                    "sceneCaptureType": "Standard",
+                    "sceneType": "Directly photographed",
+                    "colorSpace": "sRGB",
+                }
+            ]
+        }
+    }
 
 
 class ImageSummary(BaseModel):

@@ -17,7 +17,7 @@ from npo.modules.health.services import (
 health_router = APIRouter(
     prefix="/health",
     tags=["Health"],
-    responses={404: {"description": "Not found"}},
+    responses={404: {"description": _("Not found")}},
 )
 
 
@@ -25,7 +25,7 @@ health_router = APIRouter(
     "/check",
     summary=_("Perform a Health Check"),
     description=_(
-        "Endpoint to perform a healthcheck."
+        "Endpoint to perform a healthcheck. "
         "Check if API return HTTP status 200 (OK) and if database and "
         "directory configurations are operational or not."
     ),
@@ -49,9 +49,9 @@ async def check_health(session: Annotated[AsyncSession, Depends(get_session)]) -
 
 @health_router.get(
     "/ping",
-    summary="Respond with pong !",
-    description="Endpoint for checking only if the API is responding.",
-    response_description="Pong !",
+    summary=_("Respond with pong !"),
+    description=_("Endpoint for checking only if the API is responding."),
+    response_description=_("Pong !"),
     status_code=status.HTTP_200_OK,
     response_model=HealthPing,
 )

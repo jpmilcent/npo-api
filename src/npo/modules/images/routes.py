@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, UploadFile, status
+from fastapi import APIRouter, Depends, File, Path, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,7 +81,7 @@ images_route = NpoApiRoute(images_router)
 
 @images_router.get(
     "/",
-    summary=_("Get paginated images list"),
+    summary=_("Get images list"),
     description=_(
         "Retrieves the list of stored images with pagination. "
         "Returns basic metadata (hash, name, date, location)."
@@ -91,9 +91,9 @@ images_route = NpoApiRoute(images_router)
 )
 async def root(
     db: Annotated[AsyncSession, Depends(get_session)],
-    page: int = 1,
-    size: int = 100,
-):
+    page: Annotated[int, Query(description=_("Page number for pagination."), ge=1)] = 1,
+    size: Annotated[int, Query(description=_("Number of items per page."), ge=1, le=200)] = 100,
+) -> dict:
     skip = (page - 1) * size
     limit = size
     images, total = await get_images_list(db, skip=skip, limit=limit)
@@ -108,19 +108,50 @@ async def root(
         "The system automatically calculates hashes, extracts EXIF metadata, and "
         "generates tiles for Deep Zoom."
     ),
-    response_description=_("Dictionary of processed files with their information"),
     status_code=status.HTTP_201_CREATED,
     responses={
-        409: {"description": _("Duplicate image (perceptual hash or unique ID already exists)")},
-        413: {"description": _("File too large")},
-        507: {"description": _("Insufficient storage space")},
-        400: {"description": _("Image decoding or processing error")},
+        201: {
+            "description": _(
+                "Images uploaded successfully. "
+                "Dictionary of processed files with their information."
+            )
+        },
+        409: {
+            "description": _("Duplicate image (perceptual hash or unique ID already exists)"),
+            "content": {"application/json": {"example": {"detail": "Duplicate image detected."}}},
+        },
+        413: {
+            "description": _("File too large"),
+            "content": {
+                "application/json": {
+                    "example": {"detail": "File size exceeds the maximum allowed limit."}
+                }
+            },
+        },
+        507: {
+            "description": _("Insufficient storage space"),
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Not enough disk space to save the file."}
+                }
+            },
+        },
+        400: {
+            "description": _("Image decoding or processing error"),
+            "content": {
+                "application/json": {"example": {"detail": "Unable to decode image file."}}
+            },
+        },
     },
     # TODO: create a schema for this type of response
     response_model=dict[str, Image],
 )
 async def compute_upload_images(
-    files: list[UploadFile], db: Annotated[AsyncSession, Depends(get_session)]
+    files: Annotated[
+        list[UploadFile],
+        File(description=_("List of image files to upload.")),
+    ],
+    db: Annotated[AsyncSession, Depends(get_session)],
 ):
     infos = {}
     # Process each received image files
@@ -154,9 +185,49 @@ async def compute_upload_images(
 
 
 @images_route(
+    "/{pixel_hash}",
+    summary=_("Get file image"),
+    description=_("Retrieves the full original image or its preview using pixel hash."),
+    responses={
+        200: {
+            "content": {"image/jpeg": {}, "image/png": {}, "image/webp": {}},
+            "description": _("Image file"),
+        },
+        404: {"description": _("Image not found")},
+    },
+    response_class=Response,
+    override_404=IMAGE_NOT_FOUND_RESPONSE,
+)
+async def get_image_full(
+    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    file = await get_image_by_pixel_hash(pixel_hash, db)
+    if file:
+        image_bytes: bytes | None = await get_image(file)
+        if image_bytes is None:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=ErrorCode.IMAGE_NOT_FOUND,
+                message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            )
+        media_type = file.mime if is_web_format(file) else "image/jpeg"
+        return Response(content=image_bytes, media_type=media_type)
+    else:
+        raise APIException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=ErrorCode.IMAGE_NOT_FOUND,
+            message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+        )
+
+
+@images_route(
     "/{pixel_hash}/{zoom}/{x}/{y}.jpg",
-    summary=_("Get tile image by pixel hash, zoom level and coordinates"),
-    description=_("Retrieves a specific tile (JPEG format) for Deep Zoom display."),
+    summary=_("Get tile image"),
+    description=_(
+        "Retrieves a specific tile (JPEG format) for high-resolution zoom display "
+        "using pixel hash, zoom level and coordinates."
+    ),
     responses={
         200: {"content": {"image/jpeg": {}}, "description": _("JPEG image tile")},
         404: {"description": _("Image or tile not found")},
@@ -165,7 +236,11 @@ async def compute_upload_images(
     override_404=IMAGE_NOT_FOUND_RESPONSE,
 )
 async def get_image_tile(
-    pixel_hash: str, zoom: int, x: int, y: int, db: Annotated[AsyncSession, Depends(get_session)]
+    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    zoom: Annotated[int, Path(description=_("Zoom level"))],
+    x: Annotated[int, Path(description=_("X coordinate"))],
+    y: Annotated[int, Path(description=_("Y coordinate"))],
+    db: Annotated[AsyncSession, Depends(get_session)],
 ):
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     if file_storage:
@@ -188,46 +263,21 @@ async def get_image_tile(
 
 
 @images_route(
-    "/{pixel_hash}",
-    summary=_("Get file image by pixel hash"),
-    description=_("Retrieves the full original image or its preview."),
-    responses={
-        200: {
-            "content": {"image/jpeg": {}, "image/png": {}, "image/webp": {}},
-            "description": _("Image file"),
-        },
-        404: {"description": _("Image not found")},
-    },
-    response_class=Response,
-    override_404=IMAGE_NOT_FOUND_RESPONSE,
-)
-async def get_image_full(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
-    file = await get_image_by_pixel_hash(pixel_hash, db)
-    if file:
-        image_bytes: bytes | None = await get_image(file)
-        if image_bytes is None:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                code=ErrorCode.IMAGE_NOT_FOUND,
-                message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
-            )
-        media_type = file.mime if is_web_format(file) else "image/jpeg"
-        return Response(content=image_bytes, media_type=media_type)
-    else:
-        raise APIException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=ErrorCode.IMAGE_NOT_FOUND,
-            message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
-        )
-
-
-@images_route(
     "/{pixel_hash}/metadata",
-    summary=_("Raw metadata by pixel hash"),
-    description=_("Returns all raw metadata (EXIF, XMP, etc.) extracted from the file."),
+    summary=_("Get raw metadata"),
+    description=_(
+        "Returns all raw metadata (EXIF, XMP, etc.) extracted from the file using pixel hash."
+    ),
+    responses={
+        200: {"description": _("Image raw metadata")},
+        404: {"description": _("Raw metadata not found")},
+    },
     override_404=RAW_METADATA_NOT_FOUND_RESPONSE,
 )
-async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]):
+async def get_raw_metadata(
+    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     if file_storage:
         return file_storage.meta_data
@@ -241,15 +291,21 @@ async def get_raw_metadata(pixel_hash: str, db: Annotated[AsyncSession, Depends(
 
 @images_route(
     "/{pixel_hash}/metadata/photography",
-    summary=_("Selected photography metadata by pixel hash"),
+    summary=_("Get photography metadata"),
     description=_(
-        "Returns a formatted selection of photography metadata (ISO, Aperture, Model, etc.)."
+        "Returns a formatted selection of photography metadata "
+        "(ISO, Aperture, Model, etc.) extracted from the file using pixel hash."
     ),
-    override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
+    responses={
+        200: {"description": _("Image photography metadata")},
+        404: {"description": _("Photography metadata not found")},
+    },
     response_model=PhotographyMetadata,
+    override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_photography_metadata(
-    pixel_hash: str, db: Annotated[AsyncSession, Depends(get_session)]
+    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    db: Annotated[AsyncSession, Depends(get_session)],
 ):
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     meta = file_storage.meta_data if file_storage else None
