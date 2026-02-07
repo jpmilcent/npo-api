@@ -37,3 +37,10 @@ def make_db_directory():
     if url.drivername.startswith("sqlite") and url.database and url.database != ":memory:":
         db_path = Path(url.database)
         db_path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_system_directories():
+    """Ensure all required directories exist at startup."""
+    make_db_directory()
+    make_upload_directory()
+    make_storage_directory()

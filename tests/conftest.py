@@ -15,6 +15,7 @@ from tests.constants import EXTERNAL_FILES
 
 from npo.core import config
 from npo.core.database import Base, get_session
+from npo.core.dependencies import ensure_system_directories
 from npo.main import app
 
 # URL for an in-memory SQLite database by default, specific to tests
@@ -152,6 +153,9 @@ def override_settings(tmp_path_factory):
     base_path = tmp_path_factory.mktemp("data")
     config.settings.uploads_dir = f"{base_path}/uploads/"
     config.settings.storage_dir = f"{base_path}/storage/"
+
+    # Ensure directories exist
+    ensure_system_directories()
 
     yield base_path
 
