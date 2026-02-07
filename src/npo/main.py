@@ -5,16 +5,14 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi_babel import BabelConfigs, BabelMiddleware, _
 
 from npo.core import config
 from npo.core.database import init_db
 from npo.core.dependencies import (
-    make_db_directory,
-    make_storage_directory,
-    make_upload_directory,
+    ensure_system_directories,
 )
 from npo.core.i18n import N_
 from npo.core.logging import request_id_context, setup_logging
@@ -29,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    ensure_system_directories()
     await init_db()
     logger.info("✅ Application started and database tables created!")
     yield
@@ -48,7 +47,7 @@ for tracking and debugging.
 *   **Request Logging**: All requests are logged with their method, path,
 status code, and processing time.
 *   **Response Time**: The processing time for a request is added to the
-response headers as `X-Response-Time`.
+call_next response headers as `X-Response-Time`.
 *   **Internationalization (i18n)**: The API supports multiple languages.
 The language is determined by the `Accept-Language` header in the request.
 """
@@ -58,11 +57,6 @@ The language is determined by the `Accept-Language` header in the request.
 app = FastAPI(
     title=config.settings.app_name,
     description=description,
-    dependencies=[
-        Depends(make_db_directory),
-        Depends(make_upload_directory),
-        Depends(make_storage_directory),
-    ],
     lifespan=lifespan,
 )
 app.include_router(health_router)

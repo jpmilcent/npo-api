@@ -28,23 +28,7 @@ from npo.modules.images.schemas import (
     PhotographyMetadata,
     UploadResponse,
 )
-from npo.modules.images.services import (
-    build_image_infos,
-    check_duplicates_by_image_unique_id,
-    check_duplicates_by_perceptual_hash,
-    compute_hash,
-    compute_hash_pathes,
-    compute_perceptual_hash,
-    compute_pixel_hash,
-    create_dzi,
-    extract_metadata,
-    get_image,
-    get_tile_from_dzi,
-    is_web_format,
-    move_file,
-    save_file,
-    store_image_infos,
-)
+from npo.modules.images.services import ImageService
 
 logger = logging.getLogger(__name__)
 
@@ -157,23 +141,12 @@ async def compute_upload_images(
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> UploadResponse:
     infos = {}
+    image_service = ImageService(db)
     # Process each received image files
     for upload_file in files:
-        file = await build_image_infos(upload_file)
-
         try:
-            await save_file(upload_file, file)
-            await compute_perceptual_hash(file)
-            await check_duplicates_by_perceptual_hash(file, db)
-            await extract_metadata(file)
-            await check_duplicates_by_image_unique_id(file, db)
-
-            await compute_hash(file)
-            await compute_pixel_hash(file)
-            await compute_hash_pathes(file)
-            await move_file(file)
-            await store_image_infos(file, db)
-            await create_dzi(file)
+            file = await image_service.process_upload(upload_file)
+            infos[file.name] = file
         except DomainError as e:
             status_code = DOMAIN_ERROR_STATUS_MAP.get(type(e), status.HTTP_400_BAD_REQUEST)
             raise APIException(
@@ -182,8 +155,6 @@ async def compute_upload_images(
                 message=e.code.formatMsg(**e.kwargs),
             ) from e
 
-        logger.info("File {file.name} was uploaded successfully!")
-        infos[file.name] = file
     return UploadResponse(root=infos)
 
 
@@ -206,15 +177,18 @@ async def get_image_full(
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
     file = await get_image_by_pixel_hash(pixel_hash, db)
+    image_service = ImageService(db)
     if file:
-        image_bytes: bytes | None = await get_image(file)
+        image_bytes: bytes | None = await image_service.storage_service.get_image(file)
         if image_bytes is None:
             raise APIException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 code=ErrorCode.IMAGE_NOT_FOUND,
                 message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
             )
-        media_type = file.mime if is_web_format(file) else "image/jpeg"
+        media_type = (
+            file.mime if image_service.storage_service.is_web_format(file) else "image/jpeg"
+        )
         return Response(content=image_bytes, media_type=media_type)
     else:
         raise APIException(
@@ -246,8 +220,11 @@ async def get_image_tile(
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
     file_storage = await get_image_by_pixel_hash(pixel_hash, db)
+    image_service = ImageService(db)
     if file_storage:
-        image_bytes: bytes | None = await get_tile_from_dzi(file_storage, zoom, x, y)
+        image_bytes: bytes | None = await image_service.storage_service.get_tile_from_dzi(
+            file_storage, zoom, x, y
+        )
         if image_bytes is None:
             raise APIException(
                 status_code=status.HTTP_404_NOT_FOUND,

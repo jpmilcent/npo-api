@@ -91,12 +91,13 @@ async def test_get_image_tile_success():
         patch(
             "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
         ) as mock_get_img,
-        patch(
-            "npo.modules.images.routes.get_tile_from_dzi", new_callable=AsyncMock
-        ) as mock_get_tile,
+        patch("npo.modules.images.routes.ImageService") as MockImageService,
     ):
         mock_get_img.return_value = mock_image_storage
-        mock_get_tile.return_value = fake_tile_content
+        mock_service_instance = MockImageService.return_value
+        mock_service_instance.storage_service.get_tile_from_dzi = AsyncMock(
+            return_value=fake_tile_content
+        )
 
         response = await get_image_tile(pixel_hash, zoom, x, y, mock_db)
 
@@ -105,7 +106,9 @@ async def test_get_image_tile_success():
         assert response.media_type == "image/jpeg"
 
         mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
-        mock_get_tile.assert_awaited_once_with(mock_image_storage, zoom, x, y)
+        mock_service_instance.storage_service.get_tile_from_dzi.assert_awaited_once_with(
+            mock_image_storage, zoom, x, y
+        )
 
 
 async def test_get_image_tile_not_exists():
@@ -122,12 +125,11 @@ async def test_get_image_tile_not_exists():
         patch(
             "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
         ) as mock_get_img,
-        patch(
-            "npo.modules.images.routes.get_tile_from_dzi", new_callable=AsyncMock
-        ) as mock_get_tile,
+        patch("npo.modules.images.routes.ImageService") as MockImageService,
     ):
         mock_get_img.return_value = mock_image_storage
-        mock_get_tile.return_value = None
+        mock_service_instance = MockImageService.return_value
+        mock_service_instance.storage_service.get_tile_from_dzi = AsyncMock(return_value=None)
 
         with pytest.raises(APIException) as exc_info:
             await get_image_tile(pixel_hash, zoom, x, y, mock_db)
@@ -140,7 +142,9 @@ async def test_get_image_tile_not_exists():
         )
 
         mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
-        mock_get_tile.assert_awaited_once_with(mock_image_storage, zoom, x, y)
+        mock_service_instance.storage_service.get_tile_from_dzi.assert_awaited_once_with(
+            mock_image_storage, zoom, x, y
+        )
 
 
 async def test_get_image_tile_not_found():
@@ -156,12 +160,12 @@ async def test_get_image_tile_not_found():
         patch(
             "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
         ) as mock_get_img,
-        patch(
-            "npo.modules.images.routes.get_tile_from_dzi", new_callable=AsyncMock
-        ) as mock_get_tile,
+        patch("npo.modules.images.routes.ImageService") as MockImageService,
     ):
         mock_get_img.return_value = None
-        mock_get_tile.return_value = None
+        mock_service_instance = MockImageService.return_value
+        # Ensure method is not called (though ImageService instantiation happens after check)
+        # In current route impl, ImageService is instantiated but method called only if file found.
 
         with pytest.raises(APIException) as exc_info:
             await get_image_tile(pixel_hash, zoom, x, y, mock_db)
@@ -171,7 +175,7 @@ async def test_get_image_tile_not_found():
         assert exc_info.value.detail["message"] == f"Image {pixel_hash} not found."
 
         mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
-        mock_get_tile.assert_not_awaited()
+        mock_service_instance.storage_service.get_tile_from_dzi.assert_not_called()
 
 
 async def test_get_image_full():
@@ -189,12 +193,14 @@ async def test_get_image_full():
         patch(
             "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
         ) as mock_get_image_infos,
-        patch("npo.modules.images.routes.get_image", new_callable=AsyncMock) as mock_get_image,
-        patch("npo.modules.images.routes.is_web_format") as mock_is_web_format,
+        patch("npo.modules.images.routes.ImageService") as MockImageService,
     ):
         mock_get_image_infos.return_value = mock_image_storage
-        mock_get_image.return_value = fake_image_content
-        mock_is_web_format.return_value = False  # Force JPEG response
+        mock_service_instance = MockImageService.return_value
+        mock_service_instance.storage_service.get_image = AsyncMock(return_value=fake_image_content)
+        mock_service_instance.storage_service.is_web_format.return_value = (
+            False  # Force JPEG response
+        )
 
         response = await get_image_full(pixel_hash, mock_db)
 
@@ -203,8 +209,10 @@ async def test_get_image_full():
         assert response.media_type == "image/jpeg"
 
         mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
-        mock_get_image.assert_awaited_once_with(mock_image_storage)
-        mock_is_web_format.assert_called_once_with(mock_image_storage)
+        mock_service_instance.storage_service.get_image.assert_awaited_once_with(mock_image_storage)
+        mock_service_instance.storage_service.is_web_format.assert_called_once_with(
+            mock_image_storage
+        )
 
 
 async def test_get_image_full_not_found():
@@ -374,11 +382,9 @@ async def test_upload_image_file_too_large(client):
     """
     Test that uploading a file that is too large returns a 413 error.
     """
-    with (
-        patch("npo.modules.images.routes.build_image_infos", new_callable=AsyncMock),
-        patch("npo.modules.images.routes.save_file", new_callable=AsyncMock) as mock_save_file,
-    ):
-        mock_save_file.side_effect = FileTooLargeError(code=ErrorCode.FILE_TOO_LARGE)
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
+        mock_instance = MockImageService.return_value
+        mock_instance.process_upload.side_effect = FileTooLargeError(code=ErrorCode.FILE_TOO_LARGE)
 
         files = {"files": ("test.jpg", b"some content", "image/jpeg")}
         response = await client.post("/images/upload", files=files)
@@ -395,11 +401,11 @@ async def test_upload_image_insufficient_storage(client):
     """
     Test that uploading a file with insufficient storage returns a 507 error.
     """
-    with (
-        patch("npo.modules.images.routes.build_image_infos", new_callable=AsyncMock),
-        patch("npo.modules.images.routes.save_file", new_callable=AsyncMock) as mock_save_file,
-    ):
-        mock_save_file.side_effect = InsufficientStorageError(code=ErrorCode.INSUFFICIENT_STORAGE)
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
+        mock_instance = MockImageService.return_value
+        mock_instance.process_upload.side_effect = InsufficientStorageError(
+            code=ErrorCode.INSUFFICIENT_STORAGE
+        )
 
         files = {"files": ("test.jpg", b"some content", "image/jpeg")}
         response = await client.post("/images/upload", files=files)
@@ -416,23 +422,9 @@ async def test_upload_image_decoding_error(client):
     """
     Test that a processing error during upload returns a 400 error.
     """
-    with (
-        patch("npo.modules.images.routes.build_image_infos", new_callable=AsyncMock),
-        patch("npo.modules.images.routes.save_file", new_callable=AsyncMock),
-        patch("npo.modules.images.routes.compute_perceptual_hash", new_callable=AsyncMock),
-        patch(
-            "npo.modules.images.routes.check_duplicates_by_perceptual_hash", new_callable=AsyncMock
-        ),
-        patch("npo.modules.images.routes.extract_metadata", new_callable=AsyncMock),
-        patch(
-            "npo.modules.images.routes.check_duplicates_by_image_unique_id", new_callable=AsyncMock
-        ),
-        patch("npo.modules.images.routes.compute_hash", new_callable=AsyncMock),
-        patch(
-            "npo.modules.images.routes.compute_pixel_hash", new_callable=AsyncMock
-        ) as mock_compute_pixel_hash,
-    ):
-        mock_compute_pixel_hash.side_effect = ImageDecodingError(
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
+        mock_instance = MockImageService.return_value
+        mock_instance.process_upload.side_effect = ImageDecodingError(
             code=ErrorCode.IMAGE_DECODING_ERROR, filename="test.jpg"
         )
 
