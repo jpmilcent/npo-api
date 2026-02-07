@@ -37,3 +37,6 @@ logs/
 
 # API version file
 src/npo/version.py
+
+.gemini/
+gha-creds-*.json
