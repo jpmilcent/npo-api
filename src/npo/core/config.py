@@ -1,34 +1,54 @@
 """Application configuration settings."""
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class CommonSettings(BaseSettings):
     """Common application settings."""
 
-    app_name: str = "Nature Photo Organizer API"
+    app_name: str = Field(
+        default="Nature Photo Organizer API", description="Name of the application."
+    )
     # Use same name for app_code as the root directory of this API in the src/ directory
-    app_code: str = "npo"
-    environment: str = "production"
-    default_language: str = "en"
+    app_code: str = Field(
+        default="npo", description="Code name for the application, used for directories."
+    )
+    environment: str = Field(
+        default="production", description="Deployment environment (development, production, etc.)."
+    )
+    default_language: str = Field(default="en", description="Default language code.")
 
 
 class BackendSettings(CommonSettings):
     """Backend application settings."""
 
-    database_uri: str = "sqlite+aiosqlite:///npo.db"
-    admin_email: str = ""
-    uploads_dir: str = ""
-    storage_dir: str = ""
-    log_level: str = "INFO"
-    logs_dir: str = "logs"
-    log_max_bytes: int = 10 * 1024 * 1024  # 10 MB
-    log_backup_count: int = 5
-    hash_dir_parts_count: int = 6
-    hash_dir_step: int = 2
-    upload_safety_buffer: int = 50 * 1024 * 1024  # 50 MB
-    max_upload_size: int = 500 * 1024 * 1024  # 500 MB
+    database_uri: str = Field(
+        default="sqlite+aiosqlite:///npo.db", description="Database connection URI."
+    )
+    admin_email: str = Field(default="", description="Email address for the administrator.")
+    uploads_dir: str = Field(default="", description="Directory for temporary uploads.")
+    storage_dir: str = Field(default="", description="Directory for permanent storage.")
+    log_level: str = Field(
+        default="INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)."
+    )
+    logs_dir: str = Field(default="logs", description="Directory where log files are stored.")
+    log_max_bytes: int = Field(
+        default=10 * 1024 * 1024, description="Maximum size of a log file in bytes. Default: 10 MB."
+    )
+    log_backup_count: int = Field(default=5, description="Number of backup log files to keep.")
+    hash_dir_parts_count: int = Field(
+        default=6, description="Number of directory levels for hashed storage."
+    )
+    hash_dir_step: int = Field(default=2, description="Number of characters per directory level.")
+    upload_safety_buffer: int = Field(
+        default=50 * 1024 * 1024,
+        description="Safety buffer size for uploads in bytes. Default: 50 MB.",
+    )
+    max_upload_size: int = Field(
+        default=500 * 1024 * 1024,
+        description="Maximum allowed upload size in bytes. Default: 500 MB.",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
@@ -73,7 +93,7 @@ class BackendSettings(CommonSettings):
 class FrontendSettings(CommonSettings):
     """Frontend application settings."""
 
-    zoom_max: int = 4
+    zoom_max: int = Field(default=4, description="Maximum zoom level for images.")
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
