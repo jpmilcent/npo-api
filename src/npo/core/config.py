@@ -49,8 +49,44 @@ class BackendSettings(CommonSettings):
         default=500 * 1024 * 1024,
         description="Maximum allowed upload size in bytes. Default: 500 MB.",
     )
+    jwt_secret_key: str = Field(
+        default="secret",
+        description="Secret key for JWT token generation. Generate with: `openssl rand -hex 32`",
+    )
+    jwt_algorithm: str = Field(default="HS256", description="Algorithm used for JWT encoding.")
+    jwt_access_token_expire_minutes: int = Field(
+        default=30, description="JSON Web Token expiration time in minutes."
+    )
+    jwt_refresh_token_expire_minutes: int = Field(
+        default=10080, description="Refresh Token expiration time in minutes (default 7 days)."
+    )
+    password_min_length: int = Field(default=8, description="Minimum length for passwords.")
+    google_client_id: str = Field(default="", description="Google OAuth2 Client ID.")
+    google_client_secret: str = Field(default="", description="Google OAuth2 Client Secret.")
+    github_client_id: str = Field(default="", description="GitHub OAuth2 Client ID.")
+    github_client_secret: str = Field(default="", description="GitHub OAuth2 Client Secret.")
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
+
+    @property
+    def oauth_configs(self) -> dict:
+        return {
+            "google": {
+                "client_id": self.google_client_id,
+                "client_secret": self.google_client_secret,
+                "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
+                "client_kwargs": {"scope": "openid email profile"},
+            },
+            "github": {
+                "client_id": self.github_client_id,
+                "client_secret": self.github_client_secret,
+                "access_token_url": "https://github.com/login/oauth/access_token",
+                "authorize_url": "https://github.com/login/oauth/authorize",
+                "api_base_url": "https://api.github.com/",
+                "userinfo_endpoint": "https://api.github.com/user",
+                "client_kwargs": {"scope": "user:email"},
+            },
+        }
 
     @field_validator("log_level")
     @classmethod

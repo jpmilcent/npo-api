@@ -76,11 +76,40 @@ class ErrorCode(StrEnum):
             "Check if the package is installed."
         ),
     )
+    UNAUTHORIZED_USER_ERROR = ("UNAUTHORIZED_USER_ERROR", N_("Could not validate credentials."))
+    INACTIVE_USER_ERROR = ("INACTIVE_USER_ERROR", N_("Inactive user."))
     UNSUPPORTED_GPS_DATUM = (
         "UNSUPPORTED_GPS_DATUM",
         N_(
             "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 is supported."
         ),
+    )
+    PROVIDER_NOT_FOUND = ("PROVIDER_NOT_FOUND", N_("Provider '{provider}' not found."))
+    CANNOT_REMOVE_LAST_AUTH_METHOD = (
+        "CANNOT_REMOVE_LAST_AUTH_METHOD",
+        N_("Cannot remove the last authentication method."),
+    )
+    LOGIN_AUTH_ERROR = ("LOGIN_AUTH_ERROR", N_("Incorrect username or password"))
+    REFRESH_AUTH_ERROR = ("REFRESH_AUTH_ERROR", N_("Exception occurs during token refresh"))
+    AUTH_PROVIDER_NOT_FOUND = (
+        "AUTH_PROVIDER_NOT_FOUND",
+        N_("Provider '{provider}' not found."),
+    )
+    NO_USER_INFO_AUTH_ERROR = (
+        "NO_USER_INFO_AUTH_ERROR",
+        N_("No user info returned from {provider}"),
+    )
+    NO_EMAIL_AUTH_ERROR = (
+        "NO_EMAIL_AUTH_ERROR",
+        N_("Email not found in {provider} user info"),
+    )
+    NOT_VERIFIED_EMAIL_AUTH_ERROR = (
+        "NOT_VERIFIED_EMAIL_AUTH_ERROR",
+        N_("Email not verified by {provider}."),
+    )
+    AUTH_WEBSERVICE_NOT_FOUND = (
+        "AUTH_WEBSERVICE_NOT_FOUND",
+        N_("Webservice /auth/{path} requested not found."),
     )
 
     def __new__(cls, value, message):

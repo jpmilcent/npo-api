@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi_babel import BabelConfigs, BabelMiddleware, _
+from starlette.middleware.sessions import SessionMiddleware
 
 from npo.core import config
 from npo.core.database import init_db
@@ -17,6 +18,7 @@ from npo.core.dependencies import (
 from npo.core.i18n import N_
 from npo.core.logging import request_id_context, setup_logging
 from npo.core.openapi import register_custom_openapi
+from npo.modules.auth.routes import auth_router
 from npo.modules.health.routes import health_router
 from npo.modules.images.routes import images_router
 from npo.modules.settings.routes import settings_router
@@ -62,6 +64,10 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(settings_router)
 app.include_router(images_router)
+app.include_router(auth_router)
+
+# Session Middleware is required for OAuth2 (Authlib) to store the "state" parameter
+app.add_middleware(SessionMiddleware, secret_key=config.settings.jwt_secret_key)
 
 
 @app.middleware("http")
