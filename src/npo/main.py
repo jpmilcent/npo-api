@@ -22,6 +22,7 @@ from npo.modules.auth.routes import auth_router
 from npo.modules.health.routes import health_router
 from npo.modules.images.routes import images_router
 from npo.modules.settings.routes import settings_router
+from npo.modules.users.routes.router import users_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -64,6 +65,7 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(settings_router)
 app.include_router(images_router)
+app.include_router(users_router)
 app.include_router(auth_router)
 
 # Session Middleware is required for OAuth2 (Authlib) to store the "state" parameter

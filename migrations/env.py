@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from npo.core import database
 from npo.core.config import settings
+from npo.modules import models
 
 # Alembic Config object, which provides access to the values within the pyproject.toml file in use.
 config = Config(toml_file="pyproject.toml")

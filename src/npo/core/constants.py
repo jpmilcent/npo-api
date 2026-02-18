@@ -89,6 +89,12 @@ class ErrorCode(StrEnum):
         "CANNOT_REMOVE_LAST_AUTH_METHOD",
         N_("Cannot remove the last authentication method."),
     )
+    EMAIL_ALREADY_REGISTERED = ("EMAIL_ALREADY_REGISTERED", N_("Email already registered."))
+    INCORRECT_PASSWORD = ("INCORRECT_PASSWORD", N_("Incorrect password."))
+    INVALID_VERIFICATION_TOKEN = (
+        "INVALID_VERIFICATION_TOKEN",
+        N_("Invalid or expired verification token."),
+    )
     LOGIN_AUTH_ERROR = ("LOGIN_AUTH_ERROR", N_("Incorrect username or password"))
     REFRESH_AUTH_ERROR = ("REFRESH_AUTH_ERROR", N_("Exception occurs during token refresh"))
     AUTH_PROVIDER_NOT_FOUND = (
@@ -106,6 +112,18 @@ class ErrorCode(StrEnum):
     NOT_VERIFIED_EMAIL_AUTH_ERROR = (
         "NOT_VERIFIED_EMAIL_AUTH_ERROR",
         N_("Email not verified by {provider}."),
+    )
+    FORBIDDEN_IMAGE_ACCESS = (
+        "NO_PERMISSION_TO_ACCESS_IMAGE",
+        N_("You do not have permission to access to {pixel_hash} image."),
+    )
+    USER_NOT_FOUND = (
+        "USER_NOT_FOUND",
+        N_("User with uid {uid} not found."),
+    )
+    USERS_WEBSERVICE_NOT_FOUND = (
+        "USERS_WEBSERVICE_NOT_FOUND",
+        N_("Webservice /users/{path} requested not found."),
     )
     AUTH_WEBSERVICE_NOT_FOUND = (
         "AUTH_WEBSERVICE_NOT_FOUND",
