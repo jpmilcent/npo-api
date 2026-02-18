@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-05 22:33+0100\n"
-"PO-Revision-Date: 2026-02-05 22:35+0100\n"
+"POT-Creation-Date: 2026-02-16 23:02+0100\n"
+"PO-Revision-Date: 2026-02-17 14:31+0100\n"
 "Last-Translator: \n"
 "Language-Team: fr <LL@li.org>\n"
 "Language: fr\n"
@@ -19,11 +19,51 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 "X-Generator: Poedit 3.6\n"
 
-#: src/npo/main.py:97
+#: src/npo/main.py:41
+msgid ""
+"NPO API helps you manage your naturalist images.\n"
+"\n"
+"## Middlewares\n"
+"\n"
+"The API uses several middlewares for all endpoints:\n"
+"\n"
+"*   **Request ID**: A unique request ID is generated for each incoming\n"
+"request and added to the response headers as `X-Request-ID`. This is useful\n"
+"for tracking and debugging.\n"
+"*   **Request Logging**: All requests are logged with their method, path,\n"
+"status code, and processing time.\n"
+"*   **Response Time**: The processing time for a request is added to the\n"
+"call_next response headers as `X-Response-Time`.\n"
+"*   **Internationalization (i18n)**: The API supports multiple languages.\n"
+"The language is determined by the `Accept-Language` header in the request.\n"
+msgstr ""
+"L'API NPO vous aide à gérer vos images naturalistes.\n"
+"\n"
+"## Intergiciels (*Middleware*)\n"
+"\n"
+"L'API utilise plusieurs intergiciels pour tous les points de terminaison :\n"
+"\n"
+"*  **ID de requête** : Un ID de requête unique est généré pour chaque requête "
+"entrante\n"
+"et ajouté aux en-têtes de réponse sous la forme `X-Request-ID`. Ceci est utile\n"
+"pour le suivi et le débogage.\n"
+"\n"
+"*  **Journalisation des requêtes** : Toutes les requêtes sont enregistrées avec "
+"leur méthode, leur chemin, leur code d'état\n"
+"et leur temps de traitement.\n"
+"\n"
+"*  **Temps de réponse** : Le temps de traitement d'une requête est ajouté aux en-"
+"têtes de réponse\n"
+"sous la forme `X-Response-Time`.\n"
+"\n"
+"*  **Internationalisation (i18n)** : L'API prend en charge plusieurs langues.\n"
+"La langue est déterminée par l'en-tête `Accept-Language` dans la requête.\n"
+
+#: src/npo/main.py:120
 msgid "Upload form"
 msgstr "Formulaire de téléversement"
 
-#: src/npo/main.py:98
+#: src/npo/main.py:121
 msgid "Simple upload form for testing purposes."
 msgstr "Formulaire de téléversement simple à des fins de test."
 
@@ -121,7 +161,15 @@ msgstr ""
 "La version de l'application ne peut pas être déterminée pour le paquet "
 "'{package_name}'. Vérifiez si le paquet est installé."
 
-#: src/npo/core/constants.py:82
+#: src/npo/core/constants.py:79
+msgid "Could not validate credentials."
+msgstr "Impossible de valider les informations d'identification."
+
+#: src/npo/core/constants.py:80
+msgid "Inactive user."
+msgstr "Utilisateur inactif."
+
+#: src/npo/core/constants.py:84
 #, python-brace-format
 msgid ""
 "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 is "
@@ -129,6 +177,70 @@ msgid ""
 msgstr ""
 "Image {filename} avec un datum GPS non pris en charge : {gps_datum}. Seul le "
 "datum WGS-84 est pris en charge."
+
+#: src/npo/core/constants.py:87 src/npo/core/constants.py:102
+#, python-brace-format
+msgid "Provider '{provider}' not found."
+msgstr "Fournisseur '{provider}' introuvable."
+
+#: src/npo/core/constants.py:90
+msgid "Cannot remove the last authentication method."
+msgstr "Impossible de supprimer la dernière méthode d'authentification."
+
+#: src/npo/core/constants.py:92
+msgid "Email already registered."
+msgstr "Adresse email déjà enregistrée."
+
+#: src/npo/core/constants.py:93
+msgid "Incorrect password."
+msgstr "Mot de passe incorrect."
+
+#: src/npo/core/constants.py:96
+msgid "Invalid or expired verification token."
+msgstr "Jeton de vérification invalide ou expiré."
+
+#: src/npo/core/constants.py:98
+msgid "Incorrect username or password"
+msgstr "Nom d'utilisateur ou mot de passe incorrect"
+
+#: src/npo/core/constants.py:99
+msgid "Exception occurs during token refresh"
+msgstr "Une exception est survenue durant le rafraîchissement du jeton"
+
+#: src/npo/core/constants.py:106
+#, python-brace-format
+msgid "No user info returned from {provider}"
+msgstr "Aucune information utilisateur retournée par {provider}"
+
+#: src/npo/core/constants.py:110
+#, python-brace-format
+msgid "Email not found in {provider} user info"
+msgstr "Adresse email introuvable dans les informations utilisateur {provider}"
+
+#: src/npo/core/constants.py:114
+#, python-brace-format
+msgid "Email not verified by {provider}."
+msgstr "Adresse email non vérifiée par {provider}."
+
+#: src/npo/core/constants.py:118
+#, python-brace-format
+msgid "You do not have permission to access to {pixel_hash} image."
+msgstr "Vous n'avez pas la permission d'accéder à l'image {pixel_hash}."
+
+#: src/npo/core/constants.py:122
+#, python-brace-format
+msgid "User with uid {uid} not found."
+msgstr "Utilisateur avec l'UID {uid} introuvable."
+
+#: src/npo/core/constants.py:126
+#, python-brace-format
+msgid "Webservice /users/{path} requested not found."
+msgstr "Webservice /users/{path} demandé introuvable."
+
+#: src/npo/core/constants.py:130
+#, python-brace-format
+msgid "Webservice /auth/{path} requested not found."
+msgstr "Webservice /auth/{path} demandé introuvable."
 
 #: src/npo/core/schemas.py:7
 msgid "A unique error code identifying the issue."
@@ -141,6 +253,34 @@ msgstr "Un message humainement lisible expliquant l'erreur."
 #: src/npo/core/schemas.py:10
 msgid "A unique identifier for the request, useful for tracing."
 msgstr "Un identifiant unique pour la requête, utile pour le suivi."
+
+#: src/npo/core/types.py:17
+#, python-brace-format
+msgid "Password must be at least {min_length} characters long."
+msgstr "Le mot de passe doit comporter au moins {min_length} caractères."
+
+#: src/npo/core/types.py:21
+msgid "Password must contain at least one uppercase letter."
+msgstr "Le mot de passe doit contenir au moins une lettre en majuscule."
+
+#: src/npo/core/types.py:25
+msgid "Password must contain at least one lowercase letter."
+msgstr "Le mot de passe doit contenir au moins une lettre en minuscule."
+
+#: src/npo/core/types.py:27
+msgid "Password must contain at least one digit."
+msgstr "Le mot de passe doit contenir au moins un chiffre."
+
+#: src/npo/core/types.py:30
+#, python-brace-format
+msgid "Password must contain at least one special character in : {special_chars}."
+msgstr ""
+"Le mot de passe doit contenir au moins un caractère spécial parmi : "
+"{special_chars}."
+
+#: src/npo/core/types.py:34
+msgid "Password must not contain spaces."
+msgstr "Le mot de passe ne doit pas contenir d'espaces."
 
 #: src/npo/modules/health/routes.py:20 src/npo/modules/settings/routes.py:21
 msgid "Not found"
@@ -360,23 +500,23 @@ msgstr "Adobe RGB"
 msgid "Uncalibrated"
 msgstr "Non calibré"
 
-#: src/npo/modules/images/routes.py:48 src/npo/modules/images/routes.py:170
+#: src/npo/modules/images/routes.py:39 src/npo/modules/images/routes.py:198
 msgid "Image not found"
 msgstr "Image introuvable"
 
-#: src/npo/modules/images/routes.py:54 src/npo/modules/images/routes.py:240
+#: src/npo/modules/images/routes.py:45 src/npo/modules/images/routes.py:263
 msgid "Raw metadata not found"
 msgstr "Métadonnées brutes introuvable"
 
-#: src/npo/modules/images/routes.py:60 src/npo/modules/images/routes.py:265
+#: src/npo/modules/images/routes.py:51 src/npo/modules/images/routes.py:282
 msgid "Photography metadata not found"
 msgstr "Métadonnées de photographie introuvable"
 
-#: src/npo/modules/images/routes.py:84
+#: src/npo/modules/images/routes.py:75
 msgid "Get images list"
 msgstr "Obtenir la liste paginée des images"
 
-#: src/npo/modules/images/routes.py:86
+#: src/npo/modules/images/routes.py:77
 msgid ""
 "Retrieves the list of stored images with pagination. Returns basic metadata "
 "(hash, name, date, location)."
@@ -384,15 +524,29 @@ msgstr ""
 "Retourner la liste des images stockées avec une pagination. Retourne les "
 "métadonnées basiques (hash, nom, date, localisation)."
 
-#: src/npo/modules/images/routes.py:89
+#: src/npo/modules/images/routes.py:80
 msgid "List of images and pagination information"
 msgstr "Liste des images et information de pagination"
 
-#: src/npo/modules/images/routes.py:105
+#: src/npo/modules/images/routes.py:86
+msgid "Page number for pagination."
+msgstr "Numéro de page pour la pagination."
+
+#: src/npo/modules/images/routes.py:87
+msgid "Number of items per page."
+msgstr "Nombre d'articles par page."
+
+#: src/npo/modules/images/routes.py:90
+msgid "Filter by user ID. If not provided, admins see all images."
+msgstr ""
+"Filtre par identifiant d'utilisateur. Si non fourni, les admins voient toutes "
+"les images."
+
+#: src/npo/modules/images/routes.py:102
 msgid "Upload image files"
 msgstr "Téléverser des fichiers d'image"
 
-#: src/npo/modules/images/routes.py:107
+#: src/npo/modules/images/routes.py:104
 msgid ""
 "Upload one or more images. The system automatically calculates hashes, extracts "
 "EXIF metadata, and generates tiles for Deep Zoom."
@@ -400,7 +554,7 @@ msgstr ""
 "Téléverse une ou plusieurs images. Le système calcule automatiquement les hashs, "
 "extraits les métadonnées EXIF et génère des tuiles pour un zoom haute résolution."
 
-#: src/npo/modules/images/routes.py:115
+#: src/npo/modules/images/routes.py:112
 msgid ""
 "Images uploaded successfully. Dictionary of processed files with their "
 "information."
@@ -408,40 +562,57 @@ msgstr ""
 "Image téléversée avec succès. Dictionnaire des fichiers traités avec leur "
 "information."
 
-#: src/npo/modules/images/routes.py:119
+#: src/npo/modules/images/routes.py:117
 msgid "Duplicate image (perceptual hash or unique ID already exists)"
 msgstr "Image dupliquée (le hash perceptuel ou l'ID d'image unique existe déjà)."
 
-#: src/npo/modules/images/routes.py:120
+#: src/npo/modules/images/routes.py:121
 msgid "File too large"
 msgstr "Fichier trop volumineux"
 
-#: src/npo/modules/images/routes.py:121
+#: src/npo/modules/images/routes.py:129
 msgid "Insufficient storage space"
 msgstr "Espace de stockage insuffisant"
 
-#: src/npo/modules/images/routes.py:122
+#: src/npo/modules/images/routes.py:137
 msgid "Image decoding or processing error"
 msgstr "Erreur de décodage ou de traitement de l'image"
 
-#: src/npo/modules/images/routes.py:163
+#: src/npo/modules/images/routes.py:148
+msgid "List of image files to upload."
+msgstr "Liste des fichiers d'image téléversés."
+
+#: src/npo/modules/images/routes.py:173
+msgid "Delete image"
+msgstr "Supprimer l'image"
+
+#: src/npo/modules/images/routes.py:174
+msgid "Deletes an image and its associated files using pixel hash."
+msgstr ""
+"Supprime une image et tous ses fichiers associés à l'aide du hash de pixels."
+
+#: src/npo/modules/images/routes.py:178
+msgid "Forbidden"
+msgstr "Interdit"
+
+#: src/npo/modules/images/routes.py:191
 msgid "Get file image"
 msgstr "Obtenir l'image"
 
-#: src/npo/modules/images/routes.py:164
+#: src/npo/modules/images/routes.py:192
 msgid "Retrieves the full original image or its preview using pixel hash."
 msgstr ""
 "Récupère l'image originale complète ou son aperçu à l'aide du hash de pixels."
 
-#: src/npo/modules/images/routes.py:168
+#: src/npo/modules/images/routes.py:196
 msgid "Image file"
 msgstr "Fichier image"
 
-#: src/npo/modules/images/routes.py:197
+#: src/npo/modules/images/routes.py:221
 msgid "Get tile image"
 msgstr "Obtenir la tuile"
 
-#: src/npo/modules/images/routes.py:199
+#: src/npo/modules/images/routes.py:223
 msgid ""
 "Retrieves a specific tile (JPEG format) for high-resolution zoom display using "
 "pixel hash, zoom level and coordinates."
@@ -449,19 +620,31 @@ msgstr ""
 "Récupère une tuile spécifique (format JPEG) pour l'affichage avec un zoom haute "
 "résolution à l'aide du hash de pixels, du niveau de zoom et de coordonnées."
 
-#: src/npo/modules/images/routes.py:203
+#: src/npo/modules/images/routes.py:227
 msgid "JPEG image tile"
 msgstr "Tuile image JPEG"
 
-#: src/npo/modules/images/routes.py:204
+#: src/npo/modules/images/routes.py:228
 msgid "Image or tile not found"
 msgstr "Image ou tuile introuvable."
 
-#: src/npo/modules/images/routes.py:234
+#: src/npo/modules/images/routes.py:235
+msgid "Zoom level"
+msgstr "Niveau de zoom"
+
+#: src/npo/modules/images/routes.py:236
+msgid "X coordinate"
+msgstr "Coordonnée X"
+
+#: src/npo/modules/images/routes.py:237
+msgid "Y coordinate"
+msgstr "Coordonnée Y"
+
+#: src/npo/modules/images/routes.py:257
 msgid "Get raw metadata"
 msgstr "Obtenir les métadonnées brutes"
 
-#: src/npo/modules/images/routes.py:236
+#: src/npo/modules/images/routes.py:259
 msgid ""
 "Returns all raw metadata (EXIF, XMP, etc.) extracted from the file using pixel "
 "hash."
@@ -469,15 +652,15 @@ msgstr ""
 "Retourne toutes les métadonnées brutes (EXIF, XMP, etc.) extraites du fichier à "
 "l'aide du hash de pixels."
 
-#: src/npo/modules/images/routes.py:239
+#: src/npo/modules/images/routes.py:262
 msgid "Image raw metadata"
 msgstr "Métadonnées brutes de l'image"
 
-#: src/npo/modules/images/routes.py:258
+#: src/npo/modules/images/routes.py:275
 msgid "Get photography metadata"
 msgstr "Obtenir les métadonnées de photographie"
 
-#: src/npo/modules/images/routes.py:260
+#: src/npo/modules/images/routes.py:277
 msgid ""
 "Returns a formatted selection of photography metadata (ISO, Aperture, Model, "
 "etc.) extracted from the file using pixel hash."
@@ -485,11 +668,11 @@ msgstr ""
 "Retourne à l'aide du hash de pixels une sélection de métadonnées photographiques "
 "formatées (ISO, Ouverture, Modèle, etc.) extraite du fichier."
 
-#: src/npo/modules/images/routes.py:264
+#: src/npo/modules/images/routes.py:281
 msgid "Image photography metadata"
 msgstr "Métadonnées de photographie"
 
-#: src/npo/modules/images/schemas.py:13 src/npo/modules/images/schemas.py:109
+#: src/npo/modules/images/schemas.py:13 src/npo/modules/images/schemas.py:134
 msgid "Image file name."
 msgstr "Nom du fichier image."
 
@@ -505,11 +688,11 @@ msgstr "Partie du Hash de l'image pour le chemin du dossier."
 msgid "Image hash part for file name."
 msgstr "Partie du hash de l'image pour le nom du fichier."
 
-#: src/npo/modules/images/schemas.py:17 src/npo/modules/images/schemas.py:110
+#: src/npo/modules/images/schemas.py:17 src/npo/modules/images/schemas.py:135
 msgid "Image MIME type."
 msgstr "Type MIME de l'image."
 
-#: src/npo/modules/images/schemas.py:18 src/npo/modules/images/schemas.py:111
+#: src/npo/modules/images/schemas.py:18 src/npo/modules/images/schemas.py:136
 msgid "Image size in bytes."
 msgstr "Taille de l'image en octets."
 
@@ -517,11 +700,11 @@ msgstr "Taille de l'image en octets."
 msgid "Image orientation."
 msgstr "Orientation de l'image."
 
-#: src/npo/modules/images/schemas.py:22 src/npo/modules/images/schemas.py:113
+#: src/npo/modules/images/schemas.py:22 src/npo/modules/images/schemas.py:138
 msgid "Image latitude extracted from metadata."
 msgstr "Latitude extraite des métadonnées de l'image."
 
-#: src/npo/modules/images/schemas.py:25 src/npo/modules/images/schemas.py:114
+#: src/npo/modules/images/schemas.py:25 src/npo/modules/images/schemas.py:139
 msgid "Image longitude extracted from metadata."
 msgstr "Longitude extraite des métadonnées de l'image."
 
@@ -529,7 +712,7 @@ msgstr "Longitude extraite des métadonnées de l'image."
 msgid "Image altitude extracted from metadata."
 msgstr "Altitude extraite des métadonnées de l'image."
 
-#: src/npo/modules/images/schemas.py:32 src/npo/modules/images/schemas.py:112
+#: src/npo/modules/images/schemas.py:32 src/npo/modules/images/schemas.py:137
 msgid "Image shooting date and time."
 msgstr "Date et heure de la prise de vue de l'image."
 
@@ -553,103 +736,107 @@ msgstr "Hash des pixels  de l'image."
 msgid "Image file hash."
 msgstr "Hash du fichier image."
 
-#: src/npo/modules/images/schemas.py:44
+#: src/npo/modules/images/schemas.py:43
+msgid "ID of the user who uploaded the image."
+msgstr "Identifiant de l'utilisateur qui a téléversé l'image."
+
+#: src/npo/modules/images/schemas.py:47
 msgid "Image metadata extracted with Exiftool."
 msgstr "Métadonnées de l'image extraites avec Exiftool."
 
-#: src/npo/modules/images/schemas.py:51
+#: src/npo/modules/images/schemas.py:76
 msgid "Camera manufacturer (e.g. Canon)"
 msgstr "Fabricant d'appareil photo (ex. Canon)"
 
-#: src/npo/modules/images/schemas.py:52
+#: src/npo/modules/images/schemas.py:77
 msgid "Camera model (e.g. EOS 5D)"
 msgstr "Modèle d'appareil photo (ex. EOS 5D)"
 
-#: src/npo/modules/images/schemas.py:53
+#: src/npo/modules/images/schemas.py:78
 msgid "Lens model used"
 msgstr "Modèle d'objectif utilisé"
 
-#: src/npo/modules/images/schemas.py:54
+#: src/npo/modules/images/schemas.py:79
 msgid "Focal length (e.g. 50 mm)"
 msgstr "Distance focale (ex. 50 mm)"
 
-#: src/npo/modules/images/schemas.py:56
+#: src/npo/modules/images/schemas.py:81
 msgid "35mm equivalent focal length"
 msgstr "Distance focale équivalente en 35mm"
 
-#: src/npo/modules/images/schemas.py:58
+#: src/npo/modules/images/schemas.py:83
 msgid "Aperture (e.g. f/2.8)"
 msgstr "Ouverture (ex. f/2.8)"
 
-#: src/npo/modules/images/schemas.py:59
+#: src/npo/modules/images/schemas.py:84
 msgid "Shutter speed (e.g. 1/100)"
 msgstr "Vitesse d'ouverture (ex. 1/100)"
 
-#: src/npo/modules/images/schemas.py:60
+#: src/npo/modules/images/schemas.py:85
 msgid "ISO sensitivity"
 msgstr "Sensibilité ISO"
 
-#: src/npo/modules/images/schemas.py:61
+#: src/npo/modules/images/schemas.py:86
 msgid "Flash status at capture"
 msgstr "État du flash lors de la prise"
 
-#: src/npo/modules/images/schemas.py:62
+#: src/npo/modules/images/schemas.py:87
 msgid "Image width in pixels"
 msgstr "Largeur de l'image en pixels"
 
-#: src/npo/modules/images/schemas.py:63
+#: src/npo/modules/images/schemas.py:88
 msgid "Image height in pixels"
 msgstr "Hauteur de l'image en pixels"
 
-#: src/npo/modules/images/schemas.py:64
+#: src/npo/modules/images/schemas.py:89
 msgid "Image orientation"
 msgstr "Orientation de l'image"
 
-#: src/npo/modules/images/schemas.py:65
+#: src/npo/modules/images/schemas.py:90
 msgid "White balance"
 msgstr "Balance des blancs"
 
-#: src/npo/modules/images/schemas.py:66
+#: src/npo/modules/images/schemas.py:91
 msgid "Exposure program"
 msgstr "Programme d'exposition"
 
-#: src/npo/modules/images/schemas.py:67
+#: src/npo/modules/images/schemas.py:92
 msgid "Exposure mode"
 msgstr "Mode d'exposition"
 
-#: src/npo/modules/images/schemas.py:69
+#: src/npo/modules/images/schemas.py:94
 msgid "Exposure compensation (EV)"
 msgstr "Compensation d'exposition (EV)"
 
-#: src/npo/modules/images/schemas.py:71
+#: src/npo/modules/images/schemas.py:96
 msgid "Metering mode"
 msgstr "Mode de mesure"
 
-#: src/npo/modules/images/schemas.py:72
+#: src/npo/modules/images/schemas.py:97
 msgid "Scene capture type"
 msgstr "Type de capture de scène"
 
-#: src/npo/modules/images/schemas.py:73
+#: src/npo/modules/images/schemas.py:98
 msgid "Scene type"
 msgstr "Type de scène"
 
-#: src/npo/modules/images/schemas.py:74
+#: src/npo/modules/images/schemas.py:99
 msgid "Color space (e.g. sRGB)"
 msgstr "Modèle d'appareil photo (ex. EOS 5D)"
 
-#: src/npo/modules/images/schemas.py:107
+#: src/npo/modules/images/schemas.py:132
 msgid "Image database primary key ID."
 msgstr "ID de l'image correspond à la clé primaire en base de données."
 
-#: src/npo/modules/images/schemas.py:108
+#: src/npo/modules/images/schemas.py:133
 msgid "Image pixel hash use for storage path."
 msgstr "Hash des pixels de l'image utilisé pour le chemin de stockage."
 
-#: src/npo/modules/images/schemas.py:115
+#: src/npo/modules/images/schemas.py:140
 msgid "Image creation date and time."
 msgstr "Date et heure de la création de l'image."
 
-#: src/npo/modules/images/schemas.py:116
+#: src/npo/modules/images/schemas.py:141
 msgid "Image update date and time."
 msgstr "Date et heure de mise à jour de l'image."
 
