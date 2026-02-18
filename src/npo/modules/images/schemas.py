@@ -39,6 +39,9 @@ class Image(BaseModel):
     perceptual_hash: str = Field(default="", description=_("Image perceptual hash."))
     pixel_hash: str = Field(default="", description=_("Image pixel hash."))
     file_hash: str = Field(default="", description=_("Image file hash."))
+    user_id: int | None = Field(
+        default=None, description=_("ID of the user who uploaded the image.")
+    )
 
     meta_data: dict | None = Field(
         default=None, description=_("Image metadata extracted with Exiftool.")

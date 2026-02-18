@@ -17,13 +17,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core import config
 from npo.core.constants import ErrorCode
+from npo.core.exceptions import DomainError
 from npo.modules.images.crud import (
     get_image_by_image_unique_id,
     get_image_by_perceptual_hash,
     get_image_by_pixel_hash,
 )
 from npo.modules.images.exceptions import (
-    DomainError,
     DuplicateImageError,
     FileTooLargeError,
     ImageDecodingError,
@@ -34,6 +34,7 @@ from npo.modules.images.exceptions import (
 )
 from npo.modules.images.models import Image as ImageStorage
 from npo.modules.images.schemas import Image
+from npo.modules.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -413,7 +414,7 @@ class ImageService:
         self.hash_service = HashService()
         self.metadata_service = MetadataService()
 
-    async def build_image_infos(self, upload_file: UploadFile) -> Image:
+    async def build_image_infos(self, upload_file: UploadFile, user_id: int) -> Image:
         mime_type = await self.metadata_service.extract_mime_type(upload_file)
         file_name = upload_file.filename if upload_file.filename else "unknown"
 
@@ -422,6 +423,7 @@ class ImageService:
             path=os.path.join(config.settings.uploads_dir, file_name),
             size=upload_file.size,
             mime=mime_type,
+            user_id=user_id,
         )
 
     async def check_duplicates_by_perceptual_hash(self, image: Image) -> None:
@@ -461,8 +463,8 @@ class ImageService:
         await self.db.commit()
         await self.db.refresh(file_storage)
 
-    async def process_upload(self, upload_file: UploadFile) -> Image:
-        file = await self.build_image_infos(upload_file)
+    async def process_upload(self, upload_file: UploadFile, user: User) -> Image:
+        file = await self.build_image_infos(upload_file, user.id)
 
         try:
             await self.storage_service.save_file(upload_file, file)

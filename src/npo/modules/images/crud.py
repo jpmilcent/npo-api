@@ -38,26 +38,33 @@ async def get_image_by_image_unique_id(
 
 
 async def get_images_list(
-    db: AsyncSession, skip: int = 0, limit: int = 100
+    db: AsyncSession, skip: int = 0, limit: int = 100, user_id: int | None = None
 ) -> tuple[Sequence[RowMapping], int]:
     stmt_count = select(func.count()).select_from(ImageStorage)
+    if user_id is not None:
+        stmt_count = stmt_count.where(ImageStorage.user_id == user_id)
+
     total = await db.scalar(stmt_count)
     total = total if total is not None else 0
 
+    stmt = select(
+        ImageStorage.id,
+        ImageStorage.pixel_hash.label("hash"),
+        ImageStorage.name,
+        ImageStorage.mime,
+        ImageStorage.size,
+        ImageStorage.datetime_shooting,
+        ImageStorage.latitude,
+        ImageStorage.longitude,
+        ImageStorage.created_at,
+        ImageStorage.updated_at,
+    )
+
+    if user_id is not None:
+        stmt = stmt.where(ImageStorage.user_id == user_id)
+
     stmt = (
-        select(
-            ImageStorage.id,
-            ImageStorage.pixel_hash.label("hash"),
-            ImageStorage.name,
-            ImageStorage.mime,
-            ImageStorage.size,
-            ImageStorage.datetime_shooting,
-            ImageStorage.latitude,
-            ImageStorage.longitude,
-            ImageStorage.created_at,
-            ImageStorage.updated_at,
-        )
-        .order_by(ImageStorage.created_at.desc(), ImageStorage.id.desc())
+        stmt.order_by(ImageStorage.created_at.desc(), ImageStorage.id.desc())
         .offset(skip)
         .limit(limit)
     )

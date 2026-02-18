@@ -9,11 +9,12 @@ from npo.common.decorators import NpoApiRoute
 from npo.common.pagination import create_paginated_response
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
-from npo.core.exceptions import APIException
+from npo.core.exceptions import APIException, DomainError
 from npo.core.i18n import _
-from npo.modules.images.crud import get_image_by_pixel_hash, get_images_list
+from npo.modules.auth.services import get_current_active_user
+from npo.modules.images.crud import get_images_list
+from npo.modules.images.dependencies import get_image_for_user
 from npo.modules.images.exceptions import (
-    DomainError,
     DuplicateImageError,
     FileTooLargeError,
     ImageDecodingError,
@@ -23,12 +24,14 @@ from npo.modules.images.exceptions import (
     UnsupportedGpsDatumError,
 )
 from npo.modules.images.metadata_formatters import MetadataFormatter
+from npo.modules.images.models import Image
 from npo.modules.images.schemas import (
     ImageListResponse,
     PhotographyMetadata,
     UploadResponse,
 )
 from npo.modules.images.services import ImageService
+from npo.modules.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +82,18 @@ images_route = NpoApiRoute(images_router)
 )
 async def root(
     db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
     page: Annotated[int, Query(description=_("Page number for pagination."), ge=1)] = 1,
     size: Annotated[int, Query(description=_("Number of items per page."), ge=1, le=200)] = 100,
+    user_id: Annotated[
+        int | None,
+        Query(description=_("Filter by user ID. If not provided, admins see all images.")),
+    ] = None,
 ) -> dict:
     skip = (page - 1) * size
     limit = size
-    images, total = await get_images_list(db, skip=skip, limit=limit)
+    target_user_id = user_id if current_user.is_superadmin else current_user.id
+    images, total = await get_images_list(db, skip=skip, limit=limit, user_id=target_user_id)
     return create_paginated_response(data=images, total=total, page=page, size=limit)
 
 
@@ -139,13 +148,14 @@ async def compute_upload_images(
         File(description=_("List of image files to upload.")),
     ],
     db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UploadResponse:
     infos = {}
     image_service = ImageService(db)
     # Process each received image files
     for upload_file in files:
         try:
-            file = await image_service.process_upload(upload_file)
+            file = await image_service.process_upload(upload_file, current_user)
             infos[file.name] = file
         except DomainError as e:
             status_code = DOMAIN_ERROR_STATUS_MAP.get(type(e), status.HTTP_400_BAD_REQUEST)
@@ -156,6 +166,24 @@ async def compute_upload_images(
             ) from e
 
     return UploadResponse(root=infos)
+
+
+@images_router.delete(
+    "/{pixel_hash}",
+    summary=_("Delete image"),
+    description=_("Deletes an image and its associated files using pixel hash."),
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        404: IMAGE_NOT_FOUND_RESPONSE,
+        403: {"description": _("Forbidden")},
+    },
+)
+async def delete_image(
+    file_storage: Annotated[Image, Depends(get_image_for_user)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    await db.delete(file_storage)
+    await db.commit()
 
 
 @images_route(
@@ -173,29 +201,19 @@ async def compute_upload_images(
     override_404=IMAGE_NOT_FOUND_RESPONSE,
 )
 async def get_image_full(
-    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    file: Annotated[Image, Depends(get_image_for_user)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
-    file = await get_image_by_pixel_hash(pixel_hash, db)
     image_service = ImageService(db)
-    if file:
-        image_bytes: bytes | None = await image_service.storage_service.get_image(file)
-        if image_bytes is None:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                code=ErrorCode.IMAGE_NOT_FOUND,
-                message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
-            )
-        media_type = (
-            file.mime if image_service.storage_service.is_web_format(file) else "image/jpeg"
-        )
-        return Response(content=image_bytes, media_type=media_type)
-    else:
+    image_bytes: bytes | None = await image_service.storage_service.get_image(file)
+    if image_bytes is None:
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
             code=ErrorCode.IMAGE_NOT_FOUND,
-            message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=file.pixel_hash),
         )
+    media_type = file.mime if image_service.storage_service.is_web_format(file) else "image/jpeg"
+    return Response(content=image_bytes, media_type=media_type)
 
 
 @images_route(
@@ -213,33 +231,25 @@ async def get_image_full(
     override_404=IMAGE_NOT_FOUND_RESPONSE,
 )
 async def get_image_tile(
-    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    file_storage: Annotated[Image, Depends(get_image_for_user)],
     zoom: Annotated[int, Path(description=_("Zoom level"))],
     x: Annotated[int, Path(description=_("X coordinate"))],
     y: Annotated[int, Path(description=_("Y coordinate"))],
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
-    file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     image_service = ImageService(db)
-    if file_storage:
-        image_bytes: bytes | None = await image_service.storage_service.get_tile_from_dzi(
-            file_storage, zoom, x, y
-        )
-        if image_bytes is None:
-            raise APIException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                code=ErrorCode.IMAGE_DZI_NOT_FOUND,
-                message=ErrorCode.IMAGE_DZI_NOT_FOUND.formatMsg(
-                    pixel_hash=pixel_hash, zoom=zoom, x=x, y=y
-                ),
-            )
-        return Response(content=image_bytes, media_type="image/jpeg")
-    else:
+    image_bytes: bytes | None = await image_service.storage_service.get_tile_from_dzi(
+        file_storage, zoom, x, y
+    )
+    if image_bytes is None:
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
-            code=ErrorCode.IMAGE_NOT_FOUND,
-            message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            code=ErrorCode.IMAGE_DZI_NOT_FOUND,
+            message=ErrorCode.IMAGE_DZI_NOT_FOUND.formatMsg(
+                pixel_hash=file_storage.pixel_hash, zoom=zoom, x=x, y=y
+            ),
         )
+    return Response(content=image_bytes, media_type="image/jpeg")
 
 
 @images_route(
@@ -255,18 +265,9 @@ async def get_image_tile(
     override_404=RAW_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_raw_metadata(
-    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
-    db: Annotated[AsyncSession, Depends(get_session)],
+    file_storage: Annotated[Image, Depends(get_image_for_user)],
 ):
-    file_storage = await get_image_by_pixel_hash(pixel_hash, db)
-    if file_storage:
-        return file_storage.meta_data
-    else:
-        raise APIException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=ErrorCode.RAW_METADATA_NOT_FOUND,
-            message=ErrorCode.RAW_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
-        )
+    return file_storage.meta_data
 
 
 @images_route(
@@ -284,10 +285,9 @@ async def get_raw_metadata(
     override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_photography_metadata(
-    pixel_hash: Annotated[str, Path(description=_("Image pixel hash"))],
+    file_storage: Annotated[Image, Depends(get_image_for_user)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
-    file_storage = await get_image_by_pixel_hash(pixel_hash, db)
     meta = file_storage.meta_data if file_storage else None
     if meta:
         return {
@@ -328,7 +328,9 @@ async def get_photography_metadata(
         raise APIException(
             status_code=status.HTTP_404_NOT_FOUND,
             code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
-            message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(
+                pixel_hash=file_storage.pixel_hash
+            ),
         )
 
 

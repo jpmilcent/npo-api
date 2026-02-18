@@ -1,12 +1,4 @@
-from npo.core.constants import ErrorCode
-
-
-class DomainError(Exception):
-    """Base class for domain exceptions."""
-
-    def __init__(self, code: ErrorCode, **kwargs):
-        self.code = code
-        self.kwargs = kwargs
+from npo.core.exceptions import DomainError
 
 
 class DuplicateImageError(DomainError):
