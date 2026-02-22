@@ -114,6 +114,7 @@ fixture-parentheses = true
 # Ignore not used imports (F401) in this specific files
 "src/npo/modules/models.py" = ["F401"]
 "migrations/env.py" = ["F401"]
+"tests/conftest.py" = ["F401"]
 
 [tool.alembic]
 script_location = "%(here)s/migrations"
@@ -149,7 +150,7 @@ show_missing = true
 [tool.pyright]
 include = ["src", "typings"]
 stubPath = "typings"
-ignore = ["tests"]
+exclude = ["tests"]
 typeCheckingMode = "basic"
 reportMissingTypeStubs = true
 pythonVersion = "3.13"
