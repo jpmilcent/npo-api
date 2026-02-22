@@ -24,7 +24,17 @@ def test_translate_schema_recursive():
                         "200": {
                             "description": "Successful Response",
                             "content": {
-                                "application/json": {"schema": {"title": "Item", "type": "object"}}
+                                "application/json": {
+                                    "schema": {
+                                        "title": "Item",
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "integer", "format": "int64"},
+                                            "name": {"type": "string"},
+                                        },
+                                        "required": ["id", "name"],
+                                    }
+                                }
                             },
                         }
                     },
@@ -52,6 +62,10 @@ def test_translate_schema_recursive():
     # Check that non-targeted fields (version, openapi) are not touched
     assert schema["openapi"] == "3.1.0"
     assert schema["info"]["version"] == "1.0.0"
+    assert (
+        path_op["responses"]["200"]["content"]["application/json"]["schema"]["required"][1]
+        == "name"
+    )
 
 
 def test_register_custom_openapi_integration():
