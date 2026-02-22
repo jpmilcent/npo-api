@@ -246,6 +246,7 @@ async def auth_provider_callback(
                 oauth_providers={},
             )
             db.add(user)
+            await db.flush()
 
     # Link/Update OAuth provider info
     providers = user.oauth_providers or {}
