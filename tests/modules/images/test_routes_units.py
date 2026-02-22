@@ -6,10 +6,7 @@ from tests.constants import (
     ERROR_FILE_TOO_LARGE,
     ERROR_IMAGE_DECODING_ERROR,
     ERROR_IMAGE_DZI_NOT_FOUND,
-    ERROR_IMAGE_NOT_FOUND,
     ERROR_INSUFFICIENT_STORAGE,
-    ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
-    ERROR_RAW_METADATA_NOT_FOUND,
 )
 
 from npo.core.constants import ErrorCode
@@ -20,6 +17,7 @@ from npo.modules.images.exceptions import (
     InsufficientStorageError,
 )
 from npo.modules.images.routes import (
+    delete_image,
     get_image_full,
     get_image_tile,
     get_photography_metadata,
@@ -63,10 +61,11 @@ async def test_root_pagination(client):
 
 async def test_get_tiles_units(client):
     with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
+        "npo.modules.images.dependencies.get_image_for_user", new_callable=AsyncMock
     ) as mock_get:
         mock_get.return_value = None
 
+        # This test requires an authenticated user, which the `client` fixture provides.
         pixel_hash = "abcdef1234567890abcdef1234567890"
         zoom = 2
         x = 0
@@ -80,32 +79,24 @@ async def test_get_image_tile_success():
     Check that get_image_tile returns a Response with binary content
     when the image and tile are found.
     """
-    pixel_hash = "test_hash_123"
     zoom, x, y = 1, 0, 0
     fake_tile_content = b"\xff\xd8\xff\xe0"  # JPEG partial signature
 
     mock_db = AsyncMock()
     mock_image_storage = MagicMock()
 
-    with (
-        patch(
-            "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-        ) as mock_get_img,
-        patch("npo.modules.images.routes.ImageService") as MockImageService,
-    ):
-        mock_get_img.return_value = mock_image_storage
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
         mock_service_instance = MockImageService.return_value
         mock_service_instance.storage_service.get_tile_from_dzi = AsyncMock(
             return_value=fake_tile_content
         )
 
-        response = await get_image_tile(pixel_hash, zoom, x, y, mock_db)
+        response = await get_image_tile(mock_image_storage, zoom, x, y, mock_db)
 
         assert isinstance(response, Response)
         assert response.body == fake_tile_content
         assert response.media_type == "image/jpeg"
 
-        mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
         mock_service_instance.storage_service.get_tile_from_dzi.assert_awaited_once_with(
             mock_image_storage, zoom, x, y
         )
@@ -120,19 +111,16 @@ async def test_get_image_tile_not_exists():
 
     mock_db = AsyncMock()
     mock_image_storage = MagicMock()
+    mock_image_storage.pixel_hash = pixel_hash
 
     with (
-        patch(
-            "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-        ) as mock_get_img,
         patch("npo.modules.images.routes.ImageService") as MockImageService,
     ):
-        mock_get_img.return_value = mock_image_storage
         mock_service_instance = MockImageService.return_value
         mock_service_instance.storage_service.get_tile_from_dzi = AsyncMock(return_value=None)
 
         with pytest.raises(APIException) as exc_info:
-            await get_image_tile(pixel_hash, zoom, x, y, mock_db)
+            await get_image_tile(mock_image_storage, zoom, x, y, mock_db)
 
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail["code"] == ERROR_IMAGE_DZI_NOT_FOUND
@@ -141,41 +129,9 @@ async def test_get_image_tile_not_exists():
             == f"DZI tile for image {pixel_hash} tile {zoom}/{x}/{y} not found."
         )
 
-        mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
         mock_service_instance.storage_service.get_tile_from_dzi.assert_awaited_once_with(
             mock_image_storage, zoom, x, y
         )
-
-
-async def test_get_image_tile_not_found():
-    """
-    Check the response when get_image_tile not found image infos in database.
-    """
-    pixel_hash = "test_hash_123"
-    zoom, x, y = 1, 0, 0
-
-    mock_db = AsyncMock()
-
-    with (
-        patch(
-            "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-        ) as mock_get_img,
-        patch("npo.modules.images.routes.ImageService") as MockImageService,
-    ):
-        mock_get_img.return_value = None
-        mock_service_instance = MockImageService.return_value
-        # Ensure method is not called (though ImageService instantiation happens after check)
-        # In current route impl, ImageService is instantiated but method called only if file found.
-
-        with pytest.raises(APIException) as exc_info:
-            await get_image_tile(pixel_hash, zoom, x, y, mock_db)
-
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert exc_info.value.detail["code"] == ERROR_IMAGE_NOT_FOUND
-        assert exc_info.value.detail["message"] == f"Image {pixel_hash} not found."
-
-        mock_get_img.assert_awaited_once_with(pixel_hash, mock_db)
-        mock_service_instance.storage_service.get_tile_from_dzi.assert_not_called()
 
 
 async def test_get_image_full():
@@ -183,83 +139,28 @@ async def test_get_image_full():
     Check that get_image_full returns a Response with binary content
     when the image is found.
     """
-    pixel_hash = "test_hash_123"
     fake_image_content = b"\xff\xd8\xff\xe0"  # JPEG partial signature
 
     mock_db = AsyncMock()
     mock_image_storage = MagicMock()
 
-    with (
-        patch(
-            "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-        ) as mock_get_image_infos,
-        patch("npo.modules.images.routes.ImageService") as MockImageService,
-    ):
-        mock_get_image_infos.return_value = mock_image_storage
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
         mock_service_instance = MockImageService.return_value
         mock_service_instance.storage_service.get_image = AsyncMock(return_value=fake_image_content)
         mock_service_instance.storage_service.is_web_format.return_value = (
             False  # Force JPEG response
         )
 
-        response = await get_image_full(pixel_hash, mock_db)
+        response = await get_image_full(mock_image_storage, mock_db)
 
         assert isinstance(response, Response)
         assert response.body == fake_image_content
         assert response.media_type == "image/jpeg"
 
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
         mock_service_instance.storage_service.get_image.assert_awaited_once_with(mock_image_storage)
         mock_service_instance.storage_service.is_web_format.assert_called_once_with(
             mock_image_storage
         )
-
-
-async def test_get_image_full_not_found():
-    """
-    Check the response when get_image_full not found image infos in database.
-    """
-    pixel_hash = "test_hash_123"
-
-    mock_db = AsyncMock()
-
-    with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-    ) as mock_get_image_infos:
-        mock_get_image_infos.return_value = None
-
-        with pytest.raises(APIException) as exc_info:
-            await get_image_full(pixel_hash, mock_db)
-
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert exc_info.value.detail["code"] == ERROR_IMAGE_NOT_FOUND
-        assert exc_info.value.detail["message"] == f"Image {pixel_hash} not found."
-
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
-
-
-async def test_get_raw_metadata_not_found():
-    """
-    Test that ValueError is raised when a required argument is missing.
-    """
-    pixel_hash = "test_hash_123"
-
-    mock_db = AsyncMock()
-    mock_image_storage = MagicMock()
-    mock_image_storage.meta_data = None
-    with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-    ) as mock_get_image_infos:
-        mock_get_image_infos.return_value = None
-
-        with pytest.raises(APIException) as exc_info:
-            await get_raw_metadata(pixel_hash, mock_db)
-
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert exc_info.value.detail["code"] == ERROR_RAW_METADATA_NOT_FOUND
-        assert exc_info.value.detail["message"] == f"Raw metadata for file {pixel_hash} not found."
-
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
 
 
 async def test_get_raw_metadata_success():
@@ -269,47 +170,13 @@ async def test_get_raw_metadata_success():
     pixel_hash = "test_hash_123"
     expected_metadata = {"camera": "TestCam", "exposure": "1/100s"}
 
-    mock_db = AsyncMock()
-    mock_image_storage = MagicMock()
-    mock_image_storage.meta_data = expected_metadata
+    mock_file_storage = MagicMock()
+    mock_file_storage.meta_data = expected_metadata
+    mock_file_storage.pixel_hash = pixel_hash
 
-    with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-    ) as mock_get_image_infos:
-        mock_get_image_infos.return_value = mock_image_storage
+    metadata = await get_raw_metadata(mock_file_storage)
 
-        metadata = await get_raw_metadata(pixel_hash, mock_db)
-
-        assert metadata == expected_metadata
-
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
-
-
-async def test_get_metadata_photography_not_found():
-    """
-    Test that ValueError is raised when a required argument is missing.
-    """
-    pixel_hash = "test_hash_123"
-
-    mock_db = AsyncMock()
-    mock_image_storage = MagicMock()
-    mock_image_storage.meta_data = None
-    with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-    ) as mock_get_image_infos:
-        mock_get_image_infos.return_value = None
-
-        with pytest.raises(APIException) as exc_info:
-            await get_photography_metadata(pixel_hash, mock_db)
-
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert exc_info.value.detail["code"] == ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND
-        assert (
-            exc_info.value.detail["message"]
-            == f"Photography metadata for file {pixel_hash} not found."
-        )
-
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
+    assert metadata == expected_metadata
 
 
 @patch("npo.modules.images.metadata_formatters._", new=lambda x: x)
@@ -317,7 +184,6 @@ async def test_get_metadata_photography_success():
     """
     Test that get_photography_metadata returns the correct metadata when found.
     """
-    pixel_hash = "test_hash_123"
     metadata = {
         "EXIF:Make": "TestMake",
         "EXIF:Model": "TestModel",
@@ -363,19 +229,25 @@ async def test_get_metadata_photography_success():
         "whiteBalance": "Auto",
     }
     mock_db = AsyncMock()
-    mock_image_storage = MagicMock()
-    mock_image_storage.meta_data = metadata
+    mock_file_storage = MagicMock()
+    mock_file_storage.meta_data = metadata
 
-    with patch(
-        "npo.modules.images.routes.get_image_by_pixel_hash", new_callable=AsyncMock
-    ) as mock_get_image_infos:
-        mock_get_image_infos.return_value = mock_image_storage
+    result = await get_photography_metadata(mock_file_storage, mock_db)
 
-        metadata = await get_photography_metadata(pixel_hash, mock_db)
+    assert result == expected_metadata
 
-        assert metadata == expected_metadata
 
-        mock_get_image_infos.assert_awaited_once_with(pixel_hash, mock_db)
+async def test_delete_image():
+    """
+    Test that delete_image calls db.delete and db.commit.
+    """
+    mock_db = AsyncMock()
+    mock_file_storage = MagicMock()
+
+    await delete_image(mock_file_storage, mock_db)
+
+    mock_db.delete.assert_awaited_once_with(mock_file_storage)
+    mock_db.commit.assert_awaited_once()
 
 
 async def test_upload_image_file_too_large(client):
