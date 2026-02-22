@@ -148,9 +148,12 @@ omit = [
 show_missing = true
 
 [tool.pyright]
-include = ["src", "typings"]
+include = ["src", "tests"]
+ignore = ["tests"]
 stubPath = "typings"
-exclude = ["tests"]
 typeCheckingMode = "basic"
 reportMissingTypeStubs = true
 pythonVersion = "3.13"
+# executionEnvironments = [
+#   { root=".", extraPaths=["src", "."] }
+# ]
