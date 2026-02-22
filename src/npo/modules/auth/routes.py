@@ -3,7 +3,6 @@
 """
 
 import logging
-import uuid
 from datetime import timedelta
 from typing import Annotated
 
@@ -51,12 +50,20 @@ async def login_for_access_token(
             message=ErrorCode.LOGIN_AUTH_ERROR.formatMsg(),
         )
     access_token_expires = timedelta(minutes=backend_settings.jwt_access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user.uid}, expires_delta=access_token_expires)
+    refresh_token_expires_delta = timedelta(
+        minutes=backend_settings.jwt_refresh_token_expire_minutes
+    )
 
-    refresh_token_expires = timedelta(minutes=backend_settings.jwt_refresh_token_expire_minutes)
-    jti = str(uuid.uuid4())
+    # Create refresh token and extract its JTI
     refresh_token = create_refresh_token(
-        data={"sub": user.uid, "jti": jti}, expires_delta=refresh_token_expires
+        data={"sub": user.uid}, expires_delta=refresh_token_expires_delta
+    )
+    payload = decode_access_token(refresh_token)
+    jti = payload["jti"]
+
+    # Create access token linked to the refresh token's JTI (sid = session id)
+    access_token = create_access_token(
+        data={"sub": user.uid}, expires_delta=access_token_expires, sid=jti
     )
     user.refresh_token_jti = jti
     await db.commit()
@@ -91,14 +98,20 @@ async def refresh_token(
     if user is None or not user.is_active or user.refresh_token_jti != jti:
         raise credentials_exception
 
+    # Create new tokens
     access_token_expires = timedelta(minutes=backend_settings.jwt_access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user.uid}, expires_delta=access_token_expires)
+    refresh_token_expires_delta = timedelta(
+        minutes=backend_settings.jwt_refresh_token_expire_minutes
+    )
 
-    # Renew the refresh token (optional but recommended)
-    refresh_token_expires = timedelta(minutes=backend_settings.jwt_refresh_token_expire_minutes)
-    new_jti = str(uuid.uuid4())
     new_refresh_token = create_refresh_token(
-        data={"sub": user.uid, "jti": new_jti}, expires_delta=refresh_token_expires
+        data={"sub": user.uid}, expires_delta=refresh_token_expires_delta
+    )
+    new_payload = decode_access_token(new_refresh_token)
+    new_jti = new_payload["jti"]
+
+    access_token = create_access_token(
+        data={"sub": user.uid}, expires_delta=access_token_expires, sid=new_jti
     )
     user.refresh_token_jti = new_jti
     await db.commit()
@@ -213,12 +226,18 @@ async def auth_provider_callback(
 
     # Generate tokens (reuse logic)
     access_token_expires = timedelta(minutes=backend_settings.jwt_access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user.uid}, expires_delta=access_token_expires)
+    refresh_token_expires_delta = timedelta(
+        minutes=backend_settings.jwt_refresh_token_expire_minutes
+    )
 
-    refresh_token_expires = timedelta(minutes=backend_settings.jwt_refresh_token_expire_minutes)
-    jti = str(uuid.uuid4())
     refresh_token = create_refresh_token(
-        data={"sub": user.uid, "jti": jti}, expires_delta=refresh_token_expires
+        data={"sub": user.uid}, expires_delta=refresh_token_expires_delta
+    )
+    payload = decode_access_token(refresh_token)
+    jti = payload["jti"]
+
+    access_token = create_access_token(
+        data={"sub": user.uid}, expires_delta=access_token_expires, sid=jti
     )
     user.refresh_token_jti = jti
     await db.commit()
