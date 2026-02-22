@@ -1,12 +1,16 @@
 import os
 
 import pytest
-from tests.fixtures.database import TEST_DATABASE_URL, USE_ALEMBIC_MIGRATIONS
+from tests.fixtures.database import (
+    TEST_DATABASE_URL,
+    USE_ALEMBIC_MIGRATIONS,
+    db_engine,
+    override_db_session,
+)
 
 # This makes all fixtures in the specified modules available to all tests
 pytest_plugins = [
     "tests.fixtures.user",
-    "tests.fixtures.database",
     "tests.fixtures.settings",
     "tests.fixtures.client",
     "tests.fixtures.data",
