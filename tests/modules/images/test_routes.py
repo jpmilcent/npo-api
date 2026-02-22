@@ -97,6 +97,7 @@ async def test_upload_image(large_file_cache, upload_image):
         "datetime_shooting",
         "datetime_digitized",
         "meta_data",
+        "user_id",
     }
     assert expected_keys == set(response_data[image_name].keys())
 

@@ -19,6 +19,7 @@ async def test_get_image_by_file_hash_success(override_db_session):
         path="/tmp/test_crud_image.jpg",
         file_hash=file_hash,
         mime="image/jpeg",
+        user_id=1,
     )
     override_db_session.add(image)
     await override_db_session.commit()
@@ -30,6 +31,7 @@ async def test_get_image_by_file_hash_success(override_db_session):
     assert result is not None
     assert result.id == image.id
     assert result.file_hash == file_hash
+    assert result.user_id == 1
 
 
 async def test_get_image_by_file_hash_not_found(override_db_session):
@@ -55,6 +57,7 @@ async def test_get_image_by_pixel_hash_success(override_db_session):
         pixel_hash=pixel_hash,
         file_hash="d4e5f67890a1b2c3",
         mime="image/jpeg",
+        user_id=1,
     )
     override_db_session.add(image)
     await override_db_session.commit()
@@ -66,6 +69,7 @@ async def test_get_image_by_pixel_hash_success(override_db_session):
     assert result is not None
     assert result.id == image.id
     assert result.pixel_hash == pixel_hash
+    assert result.user_id == 1
 
 
 async def test_get_image_by_pixel_hash_not_found(override_db_session):
@@ -91,6 +95,7 @@ async def test_get_image_by_perceptual_hash_success(override_db_session):
         perceptual_hash=perceptual_hash,
         file_hash="d4e5f67890a1b2c3",
         mime="image/jpeg",
+        user_id=1,
     )
     override_db_session.add(image)
     await override_db_session.commit()
@@ -127,6 +132,7 @@ async def test_get_image_by_unique_id_success(override_db_session):
         image_unique_id=unique_id,
         file_hash="d4e5f67890a1b2c3",
         mime="image/jpeg",
+        user_id=1,
     )
     override_db_session.add(image)
     await override_db_session.commit()
@@ -138,6 +144,7 @@ async def test_get_image_by_unique_id_success(override_db_session):
     assert result is not None
     assert result.id == image.id
     assert result.image_unique_id == unique_id
+    assert result.user_id == 1
 
 
 async def test_get_image_by_unique_id_not_found(override_db_session):
@@ -168,6 +175,7 @@ async def test_get_images_list_success(override_db_session):
             file_hash=f"list_hash_{i}",
             pixel_hash=f"list_pixel_{i}",
             mime="image/jpeg",
+            user_id=1,
         )
         override_db_session.add(image)
     await override_db_session.commit()
