@@ -3,7 +3,7 @@
 """
 
 import logging
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Request, status
@@ -15,7 +15,12 @@ from npo.core.config import backend_settings
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException
-from npo.core.security import create_access_token, create_refresh_token, decode_access_token
+from npo.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+    oauth2_scheme,
+)
 from npo.modules.auth.oauth import oauth
 from npo.modules.auth.schema import Token
 from npo.modules.auth.services import (
@@ -40,6 +45,7 @@ auth_route = NpoApiRoute(auth_router)
 @auth_router.post("/login", response_model=Token)
 async def login_for_access_token(
     db: Annotated[AsyncSession, Depends(get_session)],
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     user = await authenticate_user(db, form_data.username, form_data.password)
@@ -53,6 +59,7 @@ async def login_for_access_token(
     refresh_token_expires_delta = timedelta(
         minutes=backend_settings.jwt_refresh_token_expire_minutes
     )
+    refresh_token_expires_at = datetime.now(UTC) + refresh_token_expires_delta
 
     # Create refresh token and extract its JTI
     refresh_token = create_refresh_token(
@@ -65,7 +72,7 @@ async def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.uid}, expires_delta=access_token_expires, sid=jti
     )
-    user.refresh_token_jti = jti
+    user.add_refresh_token(jti, refresh_token_expires_at, request.headers.get("User-Agent"))
     await db.commit()
 
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
@@ -74,8 +81,10 @@ async def login_for_access_token(
 @auth_router.post("/refresh", response_model=Token)
 async def refresh_token(
     refresh_token: Annotated[str, Body(embed=True)],
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> Token:
+    # TODO: create distinct APIExeception for each case
     credentials_exception = APIException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         code=ErrorCode.REFRESH_AUTH_ERROR,
@@ -84,18 +93,27 @@ async def refresh_token(
     )
     try:
         payload = decode_access_token(refresh_token)
-        username: str | None = payload.get("sub")
+
+        user_uid: str | None = payload.get("sub")
         token_type: str | None = payload.get("type")
-        jti: str | None = payload.get("jti")
-        if username is None or token_type != "refresh" or jti is None:
+        old_jti: str | None = payload.get("jti")
+
+        if user_uid is None or token_type != "refresh" or old_jti is None:
             raise credentials_exception
     except Exception as e:
         raise credentials_exception from e
 
-    user = await get_user_by_uid(db, uid=username)
+    user = await get_user_by_uid(db, uid=user_uid)
 
-    # Additional check: JTI value in request must be equal to the one recorded
-    if user is None or not user.is_active or user.refresh_token_jti != jti:
+    if user is None or not user.is_active:
+        raise credentials_exception
+
+    # Reuse detection: if the JTI is not in the active list, it's an old token.
+    # Invalidate all sessions for this user as a security measure.
+    if not user.refresh_tokens or old_jti not in user.refresh_tokens:
+        if user.refresh_tokens:  # Only revoke if there were tokens to begin with
+            user.revoke_all_refresh_tokens()
+            await db.commit()
         raise credentials_exception
 
     # Create new tokens
@@ -103,6 +121,7 @@ async def refresh_token(
     refresh_token_expires_delta = timedelta(
         minutes=backend_settings.jwt_refresh_token_expire_minutes
     )
+    refresh_token_expires_at = datetime.now(UTC) + refresh_token_expires_delta
 
     new_refresh_token = create_refresh_token(
         data={"sub": user.uid}, expires_delta=refresh_token_expires_delta
@@ -113,7 +132,10 @@ async def refresh_token(
     access_token = create_access_token(
         data={"sub": user.uid}, expires_delta=access_token_expires, sid=new_jti
     )
-    user.refresh_token_jti = new_jti
+
+    # Rotate tokens: revoke old, add new
+    user.revoke_refresh_token(old_jti)
+    user.add_refresh_token(new_jti, refresh_token_expires_at, request.headers.get("User-Agent"))
     await db.commit()
 
     return Token(access_token=access_token, refresh_token=new_refresh_token, token_type="bearer")
@@ -123,9 +145,18 @@ async def refresh_token(
 async def logout(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[UserStorage, Depends(get_current_active_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
 ):
-    current_user.refresh_token_jti = None
-    await db.commit()
+    try:
+        payload = decode_access_token(token)
+        sid = payload.get("sid")  # Session ID is the JTI of the refresh token
+        if sid:
+            current_user.revoke_refresh_token(sid)
+            await db.commit()
+    except Exception:
+        # If token is invalid for any reason, we can't revoke, but that's okay.
+        # The main goal is to revoke the valid session.
+        pass
 
 
 @auth_router.get("/providers/{provider}/login")
@@ -229,6 +260,7 @@ async def auth_provider_callback(
     refresh_token_expires_delta = timedelta(
         minutes=backend_settings.jwt_refresh_token_expire_minutes
     )
+    refresh_token_expires_at = datetime.now(UTC) + refresh_token_expires_delta
 
     refresh_token = create_refresh_token(
         data={"sub": user.uid}, expires_delta=refresh_token_expires_delta
@@ -239,7 +271,7 @@ async def auth_provider_callback(
     access_token = create_access_token(
         data={"sub": user.uid}, expires_delta=access_token_expires, sid=jti
     )
-    user.refresh_token_jti = jti
+    user.add_refresh_token(jti, refresh_token_expires_at, request.headers.get("User-Agent"))
     await db.commit()
 
     # NOTE: In a real app with a separate frontend, you would redirect here

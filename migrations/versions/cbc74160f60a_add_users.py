@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column("last_login", sa.DateTime(), nullable=True),
         sa.Column("is_superadmin", sa.Boolean(), nullable=False),
         sa.Column("password", sa.String(length=250), nullable=True),
-        sa.Column("refresh_token_jti", sa.String(length=36), nullable=True),
+        sa.Column("refresh_tokens", sa.JSON(), nullable=True),
         sa.Column("oauth_providers", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
