@@ -13,7 +13,11 @@ from npo.core.exceptions import APIException, DomainError
 from npo.core.i18n import _
 from npo.modules.auth.services import get_current_active_user
 from npo.modules.images.crud import get_images_list
-from npo.modules.images.dependencies import get_image_for_user
+from npo.modules.images.dependencies import (
+    get_image_for_raw_metadata,
+    get_image_for_raw_metadata_photography,
+    get_image_for_user,
+)
 from npo.modules.images.exceptions import (
     DuplicateImageError,
     FileTooLargeError,
@@ -265,7 +269,7 @@ async def get_image_tile(
     override_404=RAW_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_raw_metadata(
-    file_storage: Annotated[Image, Depends(get_image_for_user)],
+    file_storage: Annotated[Image, Depends(get_image_for_raw_metadata)],
 ):
     return file_storage.meta_data
 
@@ -285,12 +289,13 @@ async def get_raw_metadata(
     override_404=PHOTOGRAPHY_METADATA_NOT_FOUND_RESPONSE,
 )
 async def get_photography_metadata(
-    file_storage: Annotated[Image, Depends(get_image_for_user)],
+    file_storage: Annotated[Image, Depends(get_image_for_raw_metadata_photography)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
-    meta = file_storage.meta_data if file_storage else None
+    meta = file_storage.meta_data
+    output = {}
     if meta:
-        return {
+        output = {
             "cameraMaker": meta.get("EXIF:Make"),
             "cameraModel": meta.get("EXIF:Model"),
             "lensModel": meta.get("EXIF:LensModel"),
@@ -324,14 +329,7 @@ async def get_photography_metadata(
             "sceneType": MetadataFormatter.format_scene_type(meta.get("EXIF:SceneType")),
             "colorSpace": MetadataFormatter.format_color_space(meta.get("EXIF:ColorSpace")),
         }
-    else:
-        raise APIException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
-            message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(
-                pixel_hash=file_storage.pixel_hash
-            ),
-        )
+    return output
 
 
 @images_router.get("/{path:path}", include_in_schema=False)

@@ -33,3 +33,46 @@ async def get_image_for_user(
         )
 
     return image
+
+
+async def get_image_for_raw_metadata(
+    pixel_hash: Annotated[str, Path(description="Image pixel hash")],
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> Image:
+    try:
+        return await get_image_for_user(pixel_hash, db, current_user)
+    except APIException as e:
+        if e.status_code == status.HTTP_404_NOT_FOUND:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=ErrorCode.RAW_METADATA_NOT_FOUND,
+                message=ErrorCode.RAW_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            ) from e
+        raise e
+
+
+async def get_image_for_raw_metadata_photography(
+    pixel_hash: Annotated[str, Path(description="Image pixel hash")],
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> Image:
+    try:
+        image = await get_image_for_user(pixel_hash, db, current_user)
+    except APIException as e:
+        if e.status_code == status.HTTP_404_NOT_FOUND:
+            raise APIException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
+                message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+            ) from e
+        raise e
+
+    if not image.meta_data:
+        raise APIException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
+            message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+        )
+
+    return image
