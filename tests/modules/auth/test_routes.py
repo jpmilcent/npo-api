@@ -1,9 +1,43 @@
 from datetime import timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import status
+from fastapi.responses import RedirectResponse
+from tests.constants import ERROR_NO_USER_INFO_AUTH_ERROR, ERROR_NOT_VERIFIED_EMAIL_AUTH_ERROR
 
 from npo.core.security import create_refresh_token, decode_access_token
+
+
+@pytest.mark.asyncio
+async def test_login_success(client, test_user_data):
+    """
+    Verifies that a user can log in with valid credentials.
+    """
+    login_data = {
+        "username": test_user_data["email"],
+        "password": test_user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    assert response.status_code == status.HTTP_200_OK
+    tokens = response.json()
+
+    assert "access_token" in tokens
+    assert "refresh_token" in tokens
+    assert tokens["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_invalid_credentials(client, test_user_data):
+    """
+    Verifies that login fails with invalid password.
+    """
+    login_data = {
+        "username": test_user_data["email"],
+        "password": "wrongpassword",
+    }
+    response = await client.post("/auth/login", data=login_data)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.asyncio
@@ -167,3 +201,120 @@ async def test_refresh_token_reuse_detection_invalidates_all_sessions(client, te
     # The currently valid refresh_token_2 should now also be invalid.
     response = await client.post("/auth/refresh", json={"refresh_token": refresh_token_2})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_login_provider_redirect(client):
+    """
+    Verifies that the login provider route redirects to the provider.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    target_url = "https://github.com/login/oauth/authorize"
+    # Simulate the RedirectResponse returned by authlib
+    mock_client.authorize_redirect.return_value = RedirectResponse(url=target_url)
+
+    with patch(
+        "npo.modules.auth.routes.oauth.create_client", return_value=mock_client
+    ) as mock_create_client:
+        # follow_redirects=False allows us to inspect the 307 response instead of following it
+        response = await client.get(f"/auth/providers/{provider}/login", follow_redirects=False)
+
+        assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+        assert response.headers["location"] == target_url
+        mock_create_client.assert_called_with(provider)
+        mock_client.authorize_redirect.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_login_provider_not_found(client):
+    """
+    Verifies that an invalid provider returns 404.
+    """
+    provider = "invalid-provider"
+    with patch("npo.modules.auth.routes.oauth.create_client", return_value=None):
+        response = await client.get(f"/auth/providers/{provider}/login")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_auth_provider_callback_success(client):
+    """
+    Verifies that the OAuth2 callback creates a user (or logs them in) and returns tokens.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    # Simulate a successful token exchange
+    mock_client.authorize_access_token.return_value = {"access_token": "dummy_token"}
+
+    # Simulate user info returned by the service
+    user_info = {
+        "sub": "123456",
+        "email": "oauth_user@example.com",
+        "email_verified": True,
+        "picture_url": "http://example.com/avatar.jpg",
+        "given_name": "OAuth",
+        "family_name": "User",
+        "name": "OAuth User",
+    }
+
+    with (
+        patch("npo.modules.auth.routes.oauth.create_client", return_value=mock_client),
+        patch("npo.modules.auth.routes.get_oauth_user_info", return_value=user_info),
+    ):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+
+        assert response.status_code == status.HTTP_200_OK
+        tokens = response.json()
+        assert "access_token" in tokens
+        assert "refresh_token" in tokens
+        assert tokens["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_auth_provider_callback_email_not_verified(client):
+    """
+    Verifies that the callback rejects users with unverified emails.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    mock_client.authorize_access_token.return_value = {"access_token": "dummy_token"}
+
+    user_info = {
+        "sub": "123456",
+        "email": "unverified@example.com",
+        "email_verified": False,
+        "picture_url": "http://example.com/avatar.jpg",
+    }
+
+    with (
+        patch("npo.modules.auth.routes.oauth.create_client", return_value=mock_client),
+        patch("npo.modules.auth.routes.get_oauth_user_info", return_value=user_info),
+    ):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        error_details = response.json()["detail"]
+        assert error_details["code"] == ERROR_NOT_VERIFIED_EMAIL_AUTH_ERROR
+        assert error_details["message"] == f"Email not verified by {provider}."
+
+
+@pytest.mark.asyncio
+async def test_auth_provider_callback_no_user_info(client):
+    """
+    Verifies that the callback handles cases where no user info is returned.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    mock_client.authorize_access_token.return_value = {"access_token": "dummy_token"}
+
+    with (
+        patch("npo.modules.auth.routes.oauth.create_client", return_value=mock_client),
+        patch("npo.modules.auth.routes.get_oauth_user_info", return_value={}),
+    ):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        error_details = response.json()["detail"]
+        assert error_details["code"] == ERROR_NO_USER_INFO_AUTH_ERROR
+        assert error_details["message"] == f"No user info returned from {provider}"
