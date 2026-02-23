@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi import status
 from fastapi.responses import RedirectResponse
-from tests.constants import ERROR_NO_USER_INFO_AUTH_ERROR, ERROR_NOT_VERIFIED_EMAIL_AUTH_ERROR
+from tests.constants import (
+    ERROR_AUTH_PROVIDER_NOT_FOUND,
+    ERROR_NO_EMAIL_AUTH_ERROR,
+    ERROR_NO_USER_INFO_AUTH_ERROR,
+    ERROR_NOT_VERIFIED_EMAIL_AUTH_ERROR,
+)
 
 from npo.core.security import create_refresh_token, decode_access_token
 
@@ -272,6 +277,34 @@ async def test_auth_provider_callback_success(client):
 
 
 @pytest.mark.asyncio
+async def test_auth_provider_callback_no_email(client):
+    """
+    Verifies that the callback rejects users with no email.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    mock_client.authorize_access_token.return_value = {"access_token": "dummy_token"}
+
+    user_info = {
+        "sub": "123456",
+        "email": None,
+        "email_verified": False,
+        "picture_url": "http://example.com/avatar.jpg",
+    }
+
+    with (
+        patch("npo.modules.auth.routes.oauth.create_client", return_value=mock_client),
+        patch("npo.modules.auth.routes.get_oauth_user_info", return_value=user_info),
+    ):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        error_details = response.json()["detail"]
+        assert error_details["code"] == ERROR_NO_EMAIL_AUTH_ERROR
+        assert error_details["message"] == f"Email not found in {provider} user info"
+
+
+@pytest.mark.asyncio
 async def test_auth_provider_callback_email_not_verified(client):
     """
     Verifies that the callback rejects users with unverified emails.
@@ -318,3 +351,132 @@ async def test_auth_provider_callback_no_user_info(client):
         error_details = response.json()["detail"]
         assert error_details["code"] == ERROR_NO_USER_INFO_AUTH_ERROR
         assert error_details["message"] == f"No user info returned from {provider}"
+
+
+@pytest.mark.asyncio
+async def test_auth_provider_callback_no_user(client):
+    """
+    Verifies that the callback handles cases where no user is returned.
+    """
+    provider = "github"
+
+    with (
+        patch("npo.modules.auth.routes.oauth.create_client", return_value=None),
+        patch("npo.modules.auth.routes.get_oauth_user_info", return_value={}),
+    ):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        error_details = response.json()["detail"]
+        assert error_details["code"] == ERROR_AUTH_PROVIDER_NOT_FOUND
+        assert error_details["message"] == f"Provider '{provider}' not found."
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_inactive_user(client, test_user_data):
+    """
+    Verifies that an inactive user cannot refresh their token.
+    """
+    # 1. Login to get a refresh token
+    login_data = {
+        "username": test_user_data["email"],
+        "password": test_user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    refresh_token = response.json()["refresh_token"]
+
+    # 2. Mock get_user_by_uid to return an inactive user
+    mock_user = AsyncMock()
+    mock_user.is_active = False
+
+    with patch("npo.modules.auth.routes.get_user_by_uid", new_callable=AsyncMock) as mock_get_user:
+        mock_get_user.return_value = mock_user
+        response = await client.post("/auth/refresh", json={"refresh_token": refresh_token})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_user_not_found(client, test_user_data):
+    """
+    Verifies that if the user is not found (e.g. deleted), refresh fails.
+    """
+    # 1. Login
+    login_data = {
+        "username": test_user_data["email"],
+        "password": test_user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    refresh_token = response.json()["refresh_token"]
+
+    # 2. Mock get_user_by_uid to return None
+    with patch("npo.modules.auth.routes.get_user_by_uid", new_callable=AsyncMock) as mock_get_user:
+        mock_get_user.return_value = None
+        response = await client.post("/auth/refresh", json={"refresh_token": refresh_token})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_logout_exception_handling(client, test_user_data):
+    """
+    Verifies that logout returns 204 even if an internal exception occurs during revocation.
+    """
+    # 1. Login
+    login_data = {
+        "username": test_user_data["email"],
+        "password": test_user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    access_token = response.json()["access_token"]
+
+    # 2. Mock User.revoke_refresh_token to raise an exception
+    with patch(
+        "npo.modules.users.models.User.revoke_refresh_token", side_effect=Exception("DB Error")
+    ):
+        response = await client.post(
+            "/auth/logout", headers={"Authorization": f"Bearer {access_token}"}
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+@pytest.mark.asyncio
+async def test_auth_provider_callback_token_error(client):
+    """
+    Verifies that if the provider token exchange fails, a 401 is returned.
+    """
+    provider = "github"
+    mock_client = AsyncMock()
+    mock_client.authorize_access_token.side_effect = Exception("Token exchange failed")
+
+    with patch("npo.modules.auth.routes.oauth.create_client", return_value=mock_client):
+        response = await client.get(f"/auth/providers/{provider}/callback")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_auth_catch_all(client):
+    """
+    Verifies that the catch-all route returns 404 for unknown auth paths.
+    """
+    response = await client.get("/auth/some/random/path")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_wrong_type(client, test_user_data):
+    """
+    Verifies that using an access token (which lacks type='refresh') as a refresh token fails.
+    """
+    # 1. Login to get an access token
+    login_data = {
+        "username": test_user_data["email"],
+        "password": test_user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    access_token = response.json()["access_token"]
+
+    # 2. Attempt refresh with access token
+    response = await client.post("/auth/refresh", json={"refresh_token": access_token})
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    error_details = response.json()["detail"]
+    assert error_details["code"] == "REFRESH_AUTH_ERROR"
