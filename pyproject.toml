@@ -143,6 +143,7 @@ source = ["npo"]
 omit = [
 	"src/npo/version.py",
 ]
+concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 show_missing = true
