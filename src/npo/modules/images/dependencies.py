@@ -63,8 +63,8 @@ async def get_image_for_raw_metadata_photography(
         if e.status_code == status.HTTP_404_NOT_FOUND:
             raise APIException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                code=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND,
-                message=ErrorCode.PHOTOGRAPHY_METADATA_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
+                code=ErrorCode.IMAGE_NOT_FOUND,
+                message=ErrorCode.IMAGE_NOT_FOUND.formatMsg(pixel_hash=pixel_hash),
             ) from e
         raise e
 
