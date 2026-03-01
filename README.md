@@ -95,6 +95,16 @@ The database content is installed by default when FastAPI app is launch if it do
 NPO_DATABASE_URI="postgresql+asyncpg://<user-name>:<user-password>@localhost:5432/<new-database-name>"
 ```
 
+### Alembic usage
+
+The Alembic configuration is in `pyproject.toml` (`[tool.alembic]`). App startup runs `alembic upgrade head` via `init_db()` in the lifespan of the app ; tests can set `USE_ALEMBIC_MIGRATIONS=True` to use migrations in fixtures.
+
+To create a new migration after modifying the SQLAlchemy models, use:
+
+```bash
+uv run alembic revision --autogenerate -m "Your migration message"
+```
+
 ### 🛡️ Pre-commit (Git hooks) installation
 
 Install this tools :
@@ -180,6 +190,7 @@ To run tests with Pytest, use for example:
 #### 📊 Tests coverage
 
 To update the coverage report use: `uv run pytest --cov --cov-report=html`
+To update the coverage report with one file use: `uv run pytest --cov --cov-append --cov-report=html tests/path/test_file.py`
 To view the report in your browser, open the _index.html_ file in the `htmlcov` directory.
 
 ### 🆙 Update version
