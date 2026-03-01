@@ -1,4 +1,6 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+import asyncio
+from typing import ClassVar
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 import pyvips
@@ -175,6 +177,16 @@ async def test_clean_upload_file_not_exists():
         mock_remove.assert_not_called()
 
 
+async def test_get_file_extension_no_mime():
+    """
+    Test that get_file_extension returns an empty string if image.mime is None.
+    """
+    storage_service = StorageService()
+    mock_image = MagicMock()
+    mock_image.mime = None
+    assert await storage_service.get_file_extension(mock_image) == ""
+
+
 async def test_compute_pixel_hash_failure():
     """Verify that an ImageDecodingError is raised if pyvips fails."""
     hash_service = HashService()
@@ -253,3 +265,229 @@ async def test_compute_perceptual_hash():
         )
         assert exc_info.value.code == ErrorCode.IMAGE_PROCESSING_ERROR
         assert exc_info.value.kwargs["filename"] == mock_image.name
+
+
+@pytest.fixture()
+def extract_preview_fixture():
+    """
+    Fixture to mock dependencies for extract_jpeg_preview tests.
+
+    It provides mocks for subprocess, wait_for, logger, and a mock image object.
+    """
+    storage_service = StorageService()
+    mock_image = MagicMock(path="/tmp/test.jpg")
+
+    with (
+        patch("npo.modules.images.services.asyncio.create_subprocess_exec") as mock_exec,
+        patch("npo.modules.images.services.asyncio.wait_for") as mock_wait_for,
+        patch("npo.modules.images.services.logger") as mock_logger,
+    ):
+        mock_proc = AsyncMock()
+        mock_proc.kill = MagicMock()
+        mock_proc.communicate = MagicMock()
+        mock_exec.return_value = mock_proc
+
+        class Mocks:
+            exec = mock_exec
+            wait_for = mock_wait_for
+            logger = mock_logger
+            proc = mock_proc
+            image = mock_image
+            service = storage_service
+            tags: ClassVar = ["-PreviewImage", "-JpgFromRaw"]
+
+        yield Mocks
+
+
+async def test_extract_jpeg_preview_timeout(extract_preview_fixture):
+    """
+    Verify that a TimeoutError during preview extraction kills the process and continues.
+    """
+    mocks = extract_preview_fixture
+
+    # We simulate the TimeoutError raised by wait_for
+    mocks.wait_for.side_effect = asyncio.TimeoutError
+
+    result = await mocks.service.extract_jpeg_preview(mocks.image)
+
+    assert result is None
+    # The loop runs twice (for each tag), so kill must be called twice
+    assert mocks.proc.kill.call_count == len(mocks.tags)
+
+
+async def test_extract_jpeg_preview_timeout_kill_error(extract_preview_fixture):
+    """
+    Verify that OSError during process kill (inside TimeoutError handling) is suppressed.
+    """
+    mocks = extract_preview_fixture
+
+    # We simulate an OSError when kill is called (e.g. process already dead)
+    mocks.proc.kill.side_effect = OSError("Process already dead")
+    mocks.wait_for.side_effect = asyncio.TimeoutError
+
+    # The exception must be suppressed and not propagate
+    result = await mocks.service.extract_jpeg_preview(mocks.image)
+
+    assert result is None
+    assert mocks.proc.kill.call_count == len(mocks.tags)
+
+
+async def test_extract_jpeg_preview_exiftool_error(extract_preview_fixture):
+    """
+    Verify that an ExifTool error generates a log message.
+    """
+    mocks = extract_preview_fixture
+    tags_tested = mocks.tags
+
+    # Simulate a failed exiftool execution
+    mocks.proc.returncode = 1
+    mocks.wait_for.return_value = (b"", b"exiftool error")
+
+    result = await mocks.service.extract_jpeg_preview(mocks.image)
+
+    assert result is None
+    # The loop runs twice, logging a warning each time
+    assert mocks.logger.warning.call_count == len(mocks.tags)
+    expected_calls = [
+        call(f"Exiftool error for {mocks.image.path} with tag {tag}: exiftool error")
+        for tag in tags_tested
+    ]
+    mocks.logger.warning.assert_has_calls(expected_calls)
+
+
+async def test_extract_jpeg_preview_generate_exception(extract_preview_fixture):
+    """
+    Verify that a generic exception during subprocess creation is logged.
+    """
+    mocks = extract_preview_fixture
+    tags_tested = mocks.tags
+
+    error_msg = "Generic exiftool error"
+    mocks.exec.side_effect = Exception(error_msg)
+
+    result = await mocks.service.extract_jpeg_preview(mocks.image)
+
+    assert result is None
+    assert mocks.logger.warning.call_count == len(tags_tested)
+    expected_calls = [
+        call(f"Error extracting preview for {mocks.image.path} with tag {tag}: {error_msg}")
+        for tag in tags_tested
+    ]
+    mocks.logger.warning.assert_has_calls(expected_calls)
+
+
+@pytest.fixture()
+def get_file_from_dzi_fixture():
+    """
+    Fixture to mock dependencies for get_file_from_dzi tests.
+    """
+    fake_storage_dir = "fake_storage_dir/"
+    mock_img = MagicMock()
+    mock_img.name = "fake_image"
+    mock_img.path_hash_dir = "fake_hash_dir/"
+    mock_img.path_hash_file = "fake_hash_file"
+    fake_zoom = 1
+    fake_x = 2
+    fake_y = 3
+    fake_tile_path = f"{mock_img.path_hash_file}/{fake_zoom}/{fake_x}/{fake_y}.jpg"
+
+    with (
+        patch("npo.modules.images.services.config.settings.storage_dir", fake_storage_dir),
+        patch("npo.modules.images.services.os.path.exists") as mock_os_path_exists,
+        patch("npo.modules.images.services.logging") as mock_logging,
+        patch("npo.modules.images.services.ZipFile") as mock_zip,
+    ):
+
+        class Mocks:
+            storage_dir = fake_storage_dir
+            img = mock_img
+            dzi_path = f"{fake_storage_dir}{mock_img.path_hash_dir}{mock_img.path_hash_file}.szi"
+            zoom = fake_zoom
+            x = fake_x
+            y = fake_y
+            tile_path = fake_tile_path
+            logging = mock_logging
+            os_path_exists = mock_os_path_exists
+            zip = mock_zip
+
+        yield Mocks
+
+
+async def test_get_file_from_dzi_when_dzi_not_found(get_file_from_dzi_fixture):
+    mocks = get_file_from_dzi_fixture
+    mocks.os_path_exists.return_value = False
+
+    result = await StorageService().get_tile_from_dzi(mocks.img, mocks.zoom, mocks.x, mocks.y)
+
+    assert result is None
+    mocks.logging.warning.assert_called_once_with(
+        f"dzi file not found for {mocks.img.name} at {mocks.dzi_path}"
+    )
+
+
+async def test_get_file_from_dzi_when_tile_not_found(get_file_from_dzi_fixture):
+    mocks = get_file_from_dzi_fixture
+    mocks.os_path_exists.return_value = True
+    # Simulate that zip_file.open() raises a KeyError because the tile is not found
+    mocks.zip.return_value.__enter__.return_value.open.side_effect = KeyError()
+
+    # The method should catch the KeyError, log it, and return None
+    result = await StorageService().get_tile_from_dzi(mocks.img, mocks.zoom, mocks.x, mocks.y)
+
+    assert result is None
+    mocks.logging.exception.assert_called_once_with(
+        f"Tile {mocks.tile_path} not found in dzi file {mocks.dzi_path}"
+    )
+
+
+async def test_get_image_return_preview_jpeg_bytes():
+    fake_img_preview_bytes = b"some content"
+    mock_img = MagicMock()
+    storage_service = StorageService()
+
+    with (
+        patch.object(storage_service, "is_web_format", return_value=False) as mock_is_web,
+        patch.object(
+            storage_service, "extract_jpeg_preview", new_callable=AsyncMock
+        ) as mock_extract,
+    ):
+        mock_extract.return_value = fake_img_preview_bytes
+
+        result = await storage_service.get_image(mock_img)
+
+    assert result == fake_img_preview_bytes
+    mock_is_web.assert_called_once_with(mock_img)
+    mock_extract.assert_awaited_once_with(mock_img)
+
+
+async def test_get_image_file_not_found():
+    mock_img = MagicMock()
+    mock_img.path_hash_dir = "fake_hash_dir"
+    mock_img.path_hash_file = "fake_hash_file"
+    storage_service = StorageService()
+
+    with (
+        patch("npo.modules.images.services.config.settings.storage_dir", "fake_storage_dir"),
+        patch.object(storage_service, "get_file_extension", new_callable=AsyncMock) as mock_get_ext,
+        patch("npo.modules.images.services.open") as mock_open,
+        patch("npo.modules.images.services.logging") as mock_logging,
+    ):
+        mock_get_ext.return_value = "jpg"
+        mock_open.side_effect = FileNotFoundError()
+
+        result = await storage_service.get_image(mock_img)
+
+    assert result is None
+    assert mock_logging.exception.call_once()
+
+
+def test_compute_perceptual_hash_sync_no_source():
+    """
+    Verify that _compute_perceptual_hash_sync raises pyvips.Error
+    when neither path nor data is provided.
+    """
+    hash_service = HashService()
+    with pytest.raises(pyvips.Error) as exc_info:
+        hash_service._compute_perceptual_hash_sync(path=None, data=None)
+
+    assert str(exc_info.value).strip() == "No image source available for perceptual hash"

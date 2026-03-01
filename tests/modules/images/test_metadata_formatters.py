@@ -41,8 +41,10 @@ class TestMetadataFormatter:
         assert MetadataFormatter.format_flash(None) is None
         assert MetadataFormatter.format_flash(0) == "No Flash"
 
-        # Cas simple : Flash fired (Bit 0 = 1)
+        # Cas simples : Flash fired (Bit 0 = 1)
         assert MetadataFormatter.format_flash(1) == "Flash fired"
+        # Cas : Flash did not fire (0) + Suppressed mode (2 << 3 = 16) -> 16
+        assert MetadataFormatter.format_flash(16) == "Flash did not fire, suppressed"
 
         # Cas complexe : Flash fired (1) + Auto mode (3 << 3 = 24) -> 25
         # 25 = 11001 (binaire)

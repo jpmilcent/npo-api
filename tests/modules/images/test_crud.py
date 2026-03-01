@@ -1,3 +1,7 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from npo.modules.images.crud import (
     get_image_by_file_hash,
     get_image_by_image_unique_id,
@@ -193,3 +197,25 @@ async def test_get_images_list_success(override_db_session):
     # Verify that the 'pixel_hash' is correctly labeled as 'hash' in the result mapping
     assert results[0]["hash"] is not None
     assert results[0]["name"].startswith("test_list_")
+
+
+@pytest.mark.asyncio
+async def test_get_images_list_with_user_id():
+    user_id = 1
+    mappings = MagicMock()
+    db = AsyncMock()
+    db.scalar.return_value = None
+    db.execute.return_value = mappings
+    mappings.return_value.all.return_value = []
+    with patch("npo.modules.images.crud.select") as mock_select:
+        stmt_count = MagicMock()
+        stmt_count.where.return_value = "fake_stmt_count"
+
+        select_value = MagicMock()
+        select_value.select_from.return_value = stmt_count
+
+        mock_select.return_value = select_value
+
+        await get_images_list(db, limit=1, user_id=user_id)
+
+    assert stmt_count.where.call_count == 1

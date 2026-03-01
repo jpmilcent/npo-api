@@ -8,7 +8,6 @@ from tests.constants import (
     ERROR_DUPLICATE_PERCEPTUAL_HASH,
     ERROR_IMAGE_NOT_FOUND,
     ERROR_IMAGES_WEBSERVICE_NOT_FOUND,
-    ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
     ERROR_RAW_METADATA_NOT_FOUND,
     IMAGE_01_JPG,
     IMAGE_02_JPG,
@@ -16,6 +15,7 @@ from tests.constants import (
     IMAGE_04_DNG,
     IMAGE_05_NEF,
     IMAGE_06_NEF,
+    MSG_IMAGE_NOT_FOUND,
     PERCEPTUAL_HASH_LENGTH,
 )
 
@@ -476,8 +476,8 @@ async def test_photography_metadata_not_found(verify_404):
     pixel_hash = "abcdef1234567890abcdef1234567890"
     await verify_404(
         f"/images/{pixel_hash}/metadata/photography",
-        ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND,
-        f"Photography metadata for file {pixel_hash} not found.",
+        ERROR_IMAGE_NOT_FOUND,
+        MSG_IMAGE_NOT_FOUND.format(pixel_hash=pixel_hash),
     )
 
 

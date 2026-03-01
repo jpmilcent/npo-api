@@ -6,7 +6,9 @@ from tests.constants import (
     ERROR_FILE_TOO_LARGE,
     ERROR_IMAGE_DECODING_ERROR,
     ERROR_IMAGE_DZI_NOT_FOUND,
+    ERROR_IMAGE_NOT_FOUND,
     ERROR_INSUFFICIENT_STORAGE,
+    MSG_IMAGE_NOT_FOUND,
 )
 
 from npo.core.constants import ErrorCode
@@ -134,7 +136,7 @@ async def test_get_image_tile_not_exists():
         )
 
 
-async def test_get_image_full():
+async def test_get_image_full_success():
     """
     Check that get_image_full returns a Response with binary content
     when the image is found.
@@ -160,6 +162,30 @@ async def test_get_image_full():
         mock_service_instance.storage_service.get_image.assert_awaited_once_with(mock_image_storage)
         mock_service_instance.storage_service.is_web_format.assert_called_once_with(
             mock_image_storage
+        )
+
+
+async def test_get_image_full_image_not_found():
+    """
+    Check that get_image_full not fount the image file content.
+    """
+    fake_image_content = None
+
+    mock_db = AsyncMock()
+    mock_image_storage = MagicMock()
+    mock_image_storage.pixel_hash = "test_hash_123"
+
+    with patch("npo.modules.images.routes.ImageService") as MockImageService:
+        mock_service_instance = MockImageService.return_value
+        mock_service_instance.storage_service.get_image = AsyncMock(return_value=fake_image_content)
+
+        with pytest.raises(APIException) as exc_info:
+            await get_image_full(mock_image_storage, mock_db)
+
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail["code"] == ERROR_IMAGE_NOT_FOUND
+        assert exc_info.value.detail["message"] == MSG_IMAGE_NOT_FOUND.format(
+            pixel_hash=mock_image_storage.pixel_hash
         )
 
 
