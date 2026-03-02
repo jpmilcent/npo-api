@@ -170,11 +170,12 @@ async def test_get_metadata_photography_metadata_not_found():
     """
     Test that get_image_for_raw_metadata_photography raises a 404 when metadata is missing.
     """
+    pixel_hash = "test_hash_123"
     mock_db = AsyncMock()
     mock_user = MagicMock()
     mock_file_storage = MagicMock()
     mock_file_storage.meta_data = None
-    mock_file_storage.pixel_hash = "test_hash_123"
+    mock_file_storage.pixel_hash = pixel_hash
 
     with patch(
         "npo.modules.images.dependencies.get_image_for_user", new_callable=AsyncMock
@@ -189,9 +190,7 @@ async def test_get_metadata_photography_metadata_not_found():
     assert isinstance(exc_info.value.detail, dict)
     detail = exc_info.value.detail
     assert detail.get("code") == ERROR_PHOTOGRAPHY_METADATA_NOT_FOUND
-    assert detail.get("message") == MSG_PHOTOGRAPHY_METADATA_NOT_FOUND.format(
-        pixel_hash=mock_file_storage.pixel_hash
-    )
+    assert detail.get("message") == MSG_PHOTOGRAPHY_METADATA_NOT_FOUND.format(pixel_hash=pixel_hash)
 
 
 async def test_get_metadata_photography_image_not_found_exception():
