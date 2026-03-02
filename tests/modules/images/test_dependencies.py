@@ -182,9 +182,7 @@ async def test_get_metadata_photography_metadata_not_found():
     ) as mock_get_image:
         mock_get_image.return_value = mock_file_storage
         with pytest.raises(APIException) as exc_info:
-            await get_image_for_raw_metadata_photography(
-                mock_file_storage.pixel_hash, mock_db, mock_user
-            )
+            await get_image_for_raw_metadata_photography(pixel_hash, mock_db, mock_user)
 
     assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
     assert isinstance(exc_info.value.detail, dict)
