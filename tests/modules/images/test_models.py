@@ -85,6 +85,26 @@ async def test_delete_image_files_dir_access_error():
     mock_os.remove.assert_not_called()
 
 
+async def test_delete_image_files_dir_path_not_exists():
+    mapper = MagicMock()
+    connection = MagicMock()
+    target = MagicMock()
+    target.path_hash_dir = "test_dir"
+    target.path_hash_file = "test_file"
+
+    with (
+        patch("npo.modules.images.models.backend_settings.storage_dir", "test_storage_dir"),
+        patch("npo.modules.images.models.os") as mock_os,
+    ):
+        mock_os.path.join.side_effect = lambda *args: "/".join(args)
+        mock_os.path.exists.return_value = False
+
+        result = delete_image_files(mapper, connection, target)
+
+    assert result is None
+    mock_os.remove.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("path_hash_dir", "path_hash_file"),
     [

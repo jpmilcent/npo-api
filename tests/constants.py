@@ -46,3 +46,14 @@ ERROR_FORBIDDEN_IMAGE_ACCESS = "NO_PERMISSION_TO_ACCESS_IMAGE"
 MSG_FORBIDDEN_IMAGE_ACCESS = "You do not have permission to access to {pixel_hash} image."
 ERROR_IMAGE_NOT_FOUND = "IMAGE_NOT_FOUND"
 MSG_IMAGE_NOT_FOUND = "Image {pixel_hash} not found."
+ERROR_UNSUPPORTED_GPS_DATUM = "UNSUPPORTED_GPS_DATUM"
+MSG_UNSUPPORTED_GPS_DATUM = (
+    "Image {filename} has unsupported GPS Map Datum: {gps_datum}. Only WGS-84 is supported."
+)
+ERROR_DUPLICATE_IMAGE_UNIQUE_ID = "DUPLICATE_IMAGE_UNIQUE_ID"
+MSG_DUPLICATE_IMAGE_UNIQUE_ID = (
+    "Image {filename} with image unique ID {image_unique_id} already exists."
+)
+LOG_DUPLICATE_IMAGE_UNIQUE_ID = (
+    "Image {image_name} with image unique ID {image_unique_id} already exists."
+)

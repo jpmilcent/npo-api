@@ -1,21 +1,32 @@
 import asyncio
+from datetime import datetime
 from typing import ClassVar
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 import pyvips
+from tests.constants import (
+    ERROR_DUPLICATE_IMAGE_UNIQUE_ID,
+    ERROR_UNSUPPORTED_GPS_DATUM,
+    LOG_DUPLICATE_IMAGE_UNIQUE_ID,
+    MSG_UNSUPPORTED_GPS_DATUM,
+)
 
 from npo.core.constants import ErrorCode
 from npo.modules.images.exceptions import (
+    DuplicateImageError,
     FileTooLargeError,
     ImageDecodingError,
     ImageProcessingError,
     InsufficientStorageError,
     StorageError,
+    UnsupportedGpsDatumError,
 )
 from npo.modules.images.schemas import Image
 from npo.modules.images.services import (
     HashService,
+    ImageService,
+    MetadataService,
     StorageService,
 )
 
@@ -491,3 +502,152 @@ def test_compute_perceptual_hash_sync_no_source():
         hash_service._compute_perceptual_hash_sync(path=None, data=None)
 
     assert str(exc_info.value).strip() == "No image source available for perceptual hash"
+
+
+def test_check_gps_map_datum_not_wgs84():
+    mock_image = MagicMock()
+    mock_image.name = "test.jpg"
+    datum = "not_wgs84"
+    mock_metadata = {"EXIF:GPSMapDatum": datum}
+    with (
+        patch("npo.modules.images.services.logging") as mock_logging,
+        pytest.raises(UnsupportedGpsDatumError) as exc_info,
+    ):
+        MetadataService().check_gps_map_datum(mock_image, mock_metadata)
+
+    assert exc_info.value.code == ERROR_UNSUPPORTED_GPS_DATUM
+    mock_logging.warning.assert_called_once_with(
+        MSG_UNSUPPORTED_GPS_DATUM.format(filename=mock_image.name, gps_datum=datum)
+    )
+
+
+@pytest.mark.parametrize(
+    ("alt", "ref", "expected_value"),
+    [
+        (1100, 1, -1100),
+        (1100, 0, 1100),
+    ],
+)
+def test_extract_metadata_altitude_success(alt, ref, expected_value):
+    mock_metadata = {"EXIF:GPSAltitude": alt, "EXIF:GPSAltitudeRef": ref}
+    result = MetadataService().extract_metadata_altitude(mock_metadata)
+    assert result == expected_value
+
+
+@pytest.mark.parametrize(
+    ("lat", "ref", "expected_value"),
+    [
+        (45.8, "S", -45.8),
+        (45.8, "N", 45.8),
+    ],
+)
+def test_extract_metadata_latitude_success(lat, ref, expected_value):
+    mock_metadata = {"EXIF:GPSLatitude": lat, "EXIF:GPSLatitudeRef": ref}
+    result = MetadataService().extract_metadata_latitude(mock_metadata)
+    assert result == expected_value
+
+
+@pytest.mark.parametrize(
+    ("lon", "ref", "expected_value"),
+    [
+        (5.3, "W", -5.3),
+        (5.3, "E", 5.3),
+    ],
+)
+def test_extract_metadata_longitude_success(lon, ref, expected_value):
+    mock_metadata = {"EXIF:GPSLongitude": lon, "EXIF:GPSLongitudeRef": ref}
+    result = MetadataService().extract_metadata_longitude(mock_metadata)
+    assert result == expected_value
+
+
+def test_parse_exif_date_success():
+    fake_date = "2026:03:08 13:43:15"
+
+    result = MetadataService().parse_exif_date(fake_date)
+
+    assert result == datetime(2026, 3, 8, 13, 43, 15)
+
+
+@pytest.mark.parametrize(
+    ("fake_date"),
+    [
+        ("not_a_date"),
+        ("2026-03-08 13:43:15"),
+    ],
+)
+def test_parse_exif_date_with_value_error(fake_date):
+    fake_date = "fake_date"
+
+    result = MetadataService().parse_exif_date(fake_date)
+
+    assert result is None
+
+
+async def test_check_duplicates_by_image_unique_id():
+    mock_db = AsyncMock()
+    mock_image_storage = MagicMock()
+    mock_image = MagicMock()
+    mock_image.name = "test.jpg"
+    mock_image.image_unique_id = "fake_image_unique_id"
+    with (
+        patch(
+            "npo.modules.images.services.get_image_by_image_unique_id", new_callable=AsyncMock
+        ) as mock_get_by_id,
+        patch("npo.modules.images.services.logging") as mock_logging,
+    ):
+        mock_get_by_id.return_value = mock_image_storage
+        with pytest.raises(DuplicateImageError) as exc_info:
+            await ImageService(mock_db).check_duplicates_by_image_unique_id(mock_image)
+
+    mock_logging.warning.assert_called_once_with(
+        LOG_DUPLICATE_IMAGE_UNIQUE_ID.format(
+            image_name=mock_image.name, image_unique_id=mock_image.image_unique_id
+        )
+    )
+    assert exc_info.value.code == ERROR_DUPLICATE_IMAGE_UNIQUE_ID
+    assert exc_info.value.kwargs["filename"] == mock_image.name
+    assert exc_info.value.kwargs["image_unique_id"] == mock_image.image_unique_id
+
+
+async def test_store_image_infos_update_existing():
+    """
+    Verify that store_image_infos updates an existing image record
+    instead of creating a new one.
+    """
+    mock_db = AsyncMock()
+
+    # The existing image in the database (mock)
+    mock_storage_image = MagicMock()
+    mock_storage_image.name = "old_name.jpg"
+    mock_storage_image.size = 50
+
+    # The new image data coming from the service processing
+    fake_size = 100
+    new_image_data = Image(
+        name="new_name.jpg",
+        path="/tmp/new_path.jpg",
+        pixel_hash="pixel_hash_123",
+        file_hash="file_hash_123",
+        size=fake_size,
+        mime="image/png",
+        user_id=1,
+    )
+
+    with patch(
+        "npo.modules.images.services.get_image_by_pixel_hash", new_callable=AsyncMock
+    ) as mock_get_by_hash:
+        mock_get_by_hash.return_value = mock_storage_image
+
+        service = ImageService(mock_db)
+        await service.store_image_infos(new_image_data)
+
+    # Verify attributes on the storage object were updated
+    assert mock_storage_image.name == "new_name.jpg"
+    assert mock_storage_image.path == "/tmp/new_path.jpg"
+    assert mock_storage_image.size == fake_size
+    assert mock_storage_image.mime == "image/png"
+
+    # Verify db interactions
+    mock_db.add.assert_not_called()
+    mock_db.commit.assert_awaited_once()
+    mock_db.refresh.assert_awaited_once_with(mock_storage_image)
