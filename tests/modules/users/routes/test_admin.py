@@ -147,7 +147,7 @@ class TestUserAdminPermissions:
     """Verifies that non-superadmin users cannot access admin routes."""
 
     @pytest.mark.parametrize(
-        ("method", "path, data"),
+        ("method", "path", "data"),
         [
             ("GET", "/users/", None),
             ("POST", "/users/", {"email": "a@b.com", "password": "Pass|word123"}),
