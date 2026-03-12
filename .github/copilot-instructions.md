@@ -14,6 +14,7 @@
 - Tests & fixtures: [`tests/conftest.py`](../tests/conftest.py) – client fixtures, `TEST_DATABASE_URL`, `USE_ALEMBIC_MIGRATIONS`, `seed_data`, temp dirs.
 
 ## Important conventions & patterns ⚙️
+- All the comments in the code are in english.
 - Hash-based storage: Pixel hash is broken into directory chunks using `NPO_HASH_DIR_STEP` and `NPO_HASH_DIR_PARTS_COUNT` from `config.settings`. See `compute_hash_pathes()` in `services.py` for exact behavior.
 - Two hash kinds for dedup: **perceptual_hash** (dHash via pyvips, 16 hex chars) and **pixel_hash** (BLAKE2b over pixel bytes, 32 hex). See `compute_perceptual_hash()` and `compute_pixel_hash()`.
 - File model: `src/npo/modules/images/models.py` — fields include `file_hash` (md5), `perceptual_hash`, `pixel_hash`, `meta_data` (JSON), location fields (`path_hash_dir`, `path_hash_file`). DB table names are `classname.lower() + 's'` (see `Base.__tablename__`).

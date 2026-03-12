@@ -25,7 +25,7 @@ async def get_user_by_uid(db: AsyncSession, uid: str) -> User | None:
 
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[User]:
-    stmt = select(User).offset(skip).limit(limit)
+    stmt = select(User).order_by(User.uid).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return list(result.scalars().all())
 

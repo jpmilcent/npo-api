@@ -7,7 +7,7 @@ from npo.core.database import get_session
 from npo.main import app
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def client(override_db_session, test_user_data: dict, override_settings, test_user):
     """
     Fixture providing a real async HTTP client.
