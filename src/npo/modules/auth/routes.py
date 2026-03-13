@@ -26,10 +26,10 @@ from npo.modules.auth.schema import Token
 from npo.modules.auth.services import (
     authenticate_user,
     extract_name_parts,
-    get_current_active_user,
     get_oauth_user_info,
 )
 from npo.modules.users.crud import get_user_by_email, get_user_by_oauth, get_user_by_uid
+from npo.modules.users.dependencies import get_current_active_user
 from npo.modules.users.models import User as UserStorage
 
 logger = logging.getLogger(__name__)

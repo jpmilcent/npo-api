@@ -15,8 +15,8 @@ from npo.core.security import (
     get_password_hash,
     verify_password,
 )
-from npo.modules.auth.services import get_current_active_user
 from npo.modules.users.crud import get_user_by_email
+from npo.modules.users.dependencies import get_current_active_user
 from npo.modules.users.models import User as UserStorage
 from npo.modules.users.schema import (
     User,

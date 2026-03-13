@@ -11,7 +11,6 @@ from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.exceptions import APIException, DomainError
 from npo.core.i18n import _
-from npo.modules.auth.services import get_current_active_user
 from npo.modules.images.crud import get_images_list
 from npo.modules.images.dependencies import (
     get_image_for_raw_metadata,
@@ -35,6 +34,7 @@ from npo.modules.images.schemas import (
     UploadResponse,
 )
 from npo.modules.images.services import ImageService
+from npo.modules.users.dependencies import get_current_active_user
 from npo.modules.users.models import User
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from npo.core.constants import ErrorCode
 from npo.core.database import get_session
 from npo.core.security import decode_access_token, oauth2_scheme, verify_password
-from npo.modules.auth.exceptions import InactiveUserError, UnauthorizedUserError
+from npo.modules.auth.exceptions import UnauthorizedUserError
 from npo.modules.auth.schema import TokenData
 from npo.modules.users.crud import get_user_by_email, get_user_by_uid
 from npo.modules.users.models import User
@@ -45,14 +45,6 @@ async def get_current_user(
     if user is None:
         raise credentials_error
     return user
-
-
-async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> User:
-    if not current_user.is_active:
-        raise InactiveUserError(ErrorCode.INACTIVE_USER_ERROR)
-    return current_user
 
 
 async def get_oauth_user_info(client, token: dict, provider: str) -> dict:
