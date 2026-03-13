@@ -31,7 +31,7 @@ async def oauth_only_user_client(override_db_session: AsyncSession):
     app.dependency_overrides[get_session] = lambda: override_db_session
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # Manually create a token because there is no password to log in
-        token = create_access_token(data={"sub": user.email})
+        token = create_access_token(data={"sub": user.uid})
         ac.headers.update({"Authorization": f"Bearer {token}"})
         yield ac, user
     app.dependency_overrides.clear()
