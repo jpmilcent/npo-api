@@ -2,13 +2,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from jwt import InvalidTokenError
-from tests.constants import ERROR_INACTIVE_USER_ERROR, ERROR_UNAUTHORIZED_USER_ERROR
+from tests.constants import ERROR_UNAUTHORIZED_USER_ERROR
 
-from npo.modules.auth.exceptions import InactiveUserError, UnauthorizedUserError
+from npo.modules.auth.exceptions import UnauthorizedUserError
 from npo.modules.auth.services import (
     authenticate_user,
     extract_name_parts,
-    get_current_active_user,
     get_current_user,
     get_email_from_provider,
     get_oauth_user_info,
@@ -105,30 +104,6 @@ async def test_get_current_user_success(override_db_session):
             user = await get_current_user(override_db_session, token)
 
     assert user == "fake_user"
-
-
-@pytest.mark.asyncio
-async def test_get_current_active_user_inactive_user(override_db_session):
-    """
-    Test that get_current_active_user raises an exception if the user is inactive.
-    """
-    user = MagicMock()
-    user.is_active = False
-    with pytest.raises(InactiveUserError) as exc_info:
-        await get_current_active_user(user)
-
-    assert exc_info.value.code == ERROR_INACTIVE_USER_ERROR
-
-
-@pytest.mark.asyncio
-async def test_get_current_active_user_success(override_db_session):
-    """
-    Test that get_current_active_user is active.
-    """
-    user = MagicMock()
-    user.is_active = True
-    out = await get_current_active_user(user)
-    assert out == user
 
 
 @pytest.mark.asyncio
