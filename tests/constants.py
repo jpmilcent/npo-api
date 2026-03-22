@@ -57,3 +57,4 @@ MSG_DUPLICATE_IMAGE_UNIQUE_ID = (
 LOG_DUPLICATE_IMAGE_UNIQUE_ID = (
     "Image {image_name} with image unique ID {image_unique_id} already exists."
 )
+ERROR_USERS_WEBSERVICE_NOT_FOUND = "USERS_WEBSERVICE_NOT_FOUND"
