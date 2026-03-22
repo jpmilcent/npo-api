@@ -6,6 +6,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi_babel import BabelConfigs, BabelMiddleware, _
 from starlette.middleware.sessions import SessionMiddleware
@@ -70,6 +71,16 @@ app.include_router(auth_router)
 
 # Session Middleware is required for OAuth2 (Authlib) to store the "state" parameter
 app.add_middleware(SessionMiddleware, secret_key=config.settings.jwt_secret_key)
+
+# CORS Middleware to allow cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.backend_settings.cors_origins,
+    allow_credentials=config.backend_settings.cors_allow_credentials,
+    allow_methods=config.backend_settings.cors_allow_methods,
+    allow_headers=config.backend_settings.cors_allow_headers,
+    expose_headers=config.backend_settings.cors_expose_headers,
+)
 
 
 @app.middleware("http")

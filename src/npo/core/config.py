@@ -65,6 +65,30 @@ class BackendSettings(CommonSettings):
     google_client_secret: str = Field(default="", description="Google OAuth2 Client Secret.")
     github_client_id: str = Field(default="", description="GitHub OAuth2 Client ID.")
     github_client_secret: str = Field(default="", description="GitHub OAuth2 Client Secret.")
+    cors_origins: list[str] = Field(default=["*"], description="List of allowed origins for CORS.")
+    cors_allow_credentials: bool = Field(
+        default=True,
+        description="Indicate that cookies should be supported for cross-origin requests.",
+    )
+    cors_allow_methods: list[str] = Field(
+        default=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+        description="List of allowed HTTP methods for CORS.",
+    )
+    cors_allow_headers: list[str] = Field(
+        default=[
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "Accept-Language",
+        ],
+        description="List of allowed HTTP headers for CORS.",
+    )
+    cors_expose_headers: list[str] = Field(
+        default=["X-Request-ID", "X-Response-Time"],
+        description="List of response headers exposed to the browser.",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
