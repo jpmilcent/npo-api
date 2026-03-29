@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "d18168929294"
@@ -39,7 +40,9 @@ def upgrade() -> None:
         sa.Column("altitude", sa.Float(), nullable=True),
         sa.Column("datetime_shooting", sa.DateTime(), nullable=True),
         sa.Column("datetime_digitized", sa.DateTime(), nullable=True),
-        sa.Column("meta_data", sa.JSON(), nullable=True),
+        sa.Column(
+            "meta_data", sa.JSON().with_variant(postgresql.JSONB(), "postgresql"), nullable=True
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(),

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, Boolean, DateTime, String
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from npo.core.database import Base
@@ -28,9 +29,13 @@ class User(Base):
     is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False)
 
     password: Mapped[str | None] = mapped_column(String(250))
-    refresh_tokens: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=dict, nullable=True)
+    refresh_tokens: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(postgresql.JSONB(), "postgresql"), default=dict, nullable=True
+    )
 
-    oauth_providers: Mapped[dict | None] = mapped_column(JSON, default=dict)
+    oauth_providers: Mapped[dict | None] = mapped_column(
+        JSON().with_variant(postgresql.JSONB(), "postgresql"), default=dict
+    )
 
     images: Mapped[list["Image"]] = relationship(
         "Image", back_populates="user", cascade="all, delete-orphan"
