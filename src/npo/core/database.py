@@ -21,7 +21,24 @@ from sqlalchemy.sql import functions as func
 
 from npo.core import config
 
-engine = create_async_engine(config.settings.database_uri, echo=True, future=True)
+# Configuration du pooling
+engine_kwargs = {
+    "echo": config.settings.log_level.upper() == "DEBUG",
+    "pool_size": config.settings.db_pool_size,
+    "max_overflow": config.settings.db_max_overflow,
+    "pool_timeout": config.settings.db_pool_timeout,
+    "pool_recycle": config.settings.db_pool_recycle,
+    "pool_pre_ping": config.settings.db_pool_pre_ping,
+}
+
+# SQLite ne supporte pas pool_size et max_overflow de la même manière.
+# On les retire si on utilise SQLite pour éviter des warnings ou erreurs selon le driver.
+if config.settings.database_uri.startswith("sqlite"):
+    # Pour SQLite, on laisse SQLAlchemy gérer le pool par défaut ou on pourrait utiliser NullPool
+    engine_kwargs.pop("pool_size", None)
+    engine_kwargs.pop("max_overflow", None)
+
+engine = create_async_engine(config.settings.database_uri, **engine_kwargs)
 
 
 async def init_db():

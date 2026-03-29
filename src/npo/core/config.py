@@ -89,6 +89,23 @@ class BackendSettings(CommonSettings):
         default=["X-Request-ID", "X-Response-Time"],
         description="List of response headers exposed to the browser.",
     )
+    db_pool_size: int = Field(
+        default=5, description="Number of connections to keep open in the pool."
+    )
+    db_max_overflow: int = Field(
+        default=10, description="Number of connections to allow beyond pool_size."
+    )
+    db_pool_timeout: int = Field(
+        default=30, description="Seconds to wait for a connection from the pool."
+    )
+    db_pool_recycle: int = Field(
+        default=3600,
+        description="Seconds after which a connection is automatically recycled.",
+    )
+    db_pool_pre_ping: bool = Field(
+        default=True,
+        description="Whether to test connections (ping) before using them.",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="npo_", extra="ignore")
 
