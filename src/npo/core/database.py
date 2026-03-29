@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncGenerator
+from contextvars import ContextVar
 from datetime import datetime
 
 from alembic import command
@@ -58,6 +59,9 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
         yield session
 
 
+user_id_context: ContextVar[int | None] = ContextVar("user_id", default=None)
+
+
 # Base class for all models
 class Base(AsyncAttrs, DeclarativeBase):
     __abstract__ = (
@@ -66,7 +70,11 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    created_by: Mapped[int | None] = mapped_column(Integer, default=lambda: user_id_context.get())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[int | None] = mapped_column(
+        Integer, default=lambda: user_id_context.get(), onupdate=lambda: user_id_context.get()
+    )
 
     @declared_attr.directive
     def __tablename__(self) -> str:

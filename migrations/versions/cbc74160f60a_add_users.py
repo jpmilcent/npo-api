@@ -34,8 +34,6 @@ def upgrade() -> None:
         sa.Column("last_login", sa.DateTime(), nullable=True),
         sa.Column("is_superadmin", sa.Boolean(), nullable=False),
         sa.Column("password", sa.String(length=250), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column(
             "refresh_tokens",
             sa.JSON().with_variant(postgresql.JSONB(), "postgresql"),
@@ -46,6 +44,20 @@ def upgrade() -> None:
             sa.JSON().with_variant(postgresql.JSONB(), "postgresql"),
             nullable=True,
         ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column("created_by", sa.Integer(), nullable=True),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column("updated_by", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("idx_users_email"), "users", ["email"], unique=True)

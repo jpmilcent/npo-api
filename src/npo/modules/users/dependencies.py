@@ -4,7 +4,7 @@ from fastapi import Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from npo.core.constants import ErrorCode
-from npo.core.database import get_session
+from npo.core.database import get_session, user_id_context
 from npo.core.exceptions import APIException
 from npo.core.security import oauth2_scheme
 from npo.modules.auth.exceptions import InactiveUserError, UnauthorizedUserError
@@ -19,6 +19,7 @@ async def get_current_active_user(
 ) -> User:
     try:
         user = await get_current_user(db=db, token=token)
+        user_id_context.set(user.id)
         if not user.is_active:
             raise InactiveUserError(ErrorCode.INACTIVE_USER_ERROR)
     except (UnauthorizedUserError, InactiveUserError) as e:
